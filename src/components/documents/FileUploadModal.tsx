@@ -1,52 +1,47 @@
 import UploadForm from "./UploadForm";
-import type { DocumentItem } from "@/lib/types";
+import type { DocumentResponse } from "@/lib/schemas/document";
+import { Text } from "../ui/Text";
+import { Modal } from "../ui/Modal";
 
 export default function FileUploadModal({
   showUploadModal,
   setShowUploadModal,
   refetch,
-  showGuide,
   allTags,
   onAppendDocuments,
 }: {
   showUploadModal: boolean;
   setShowUploadModal: (show: boolean) => void;
   refetch: () => void;
-  showGuide: boolean;
   allTags?: string[];
-  onAppendDocuments?: (docs: DocumentItem[]) => void;
+  onAppendDocuments?: (docs: DocumentResponse[]) => void;
 }) {
+  const tooltipContent = (
+    <Text variant="sm" color="primary" leading="relaxed">
+      1. ファイルを選択 <br />
+      2. タグを入力（任意）
+      <br /> &nbsp;&nbsp;・タグを付けることで、後に検索しやすくなります。
+      <br />
+      3.アップロード
+      <br />
+    </Text>
+  );
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={() => setShowUploadModal(false)}
+    <Modal
+      isOpen={showUploadModal}
+      title="ファイルアップロード"
+      tooltipContent={tooltipContent}
+      size="2xl"
+      onClose={() => setShowUploadModal(false)}
+    >
+      <UploadForm
+        onUploaded={(docs) => {
+          typeof onAppendDocuments === "function" && onAppendDocuments(docs);
+          refetch();
+          setShowUploadModal(false);
+        }}
+        allTags={allTags}
       />
-      <div className="relative bg-white w-full max-w-xl mx-4 rounded shadow-lg p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold">ファイルアップロード</h2>
-          <button
-            type="button"
-            className="text-xs border rounded px-2 py-1"
-            onClick={() => setShowUploadModal(false)}
-          >
-            閉じる
-          </button>
-        </div>
-        <UploadForm
-          onUploaded={(docs) => {
-            // 一覧画面側にモックドキュメントを渡す
-            // （バックエンドが未実装でもフロントで即時に一覧反映させるため）
-            // onAppendDocuments は任意
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-            typeof onAppendDocuments === "function" && onAppendDocuments(docs);
-            refetch();
-            setShowUploadModal(false);
-          }}
-          showGuide={showGuide}
-          allTags={allTags}
-        />
-      </div>
-    </div>
+    </Modal>
   );
 }

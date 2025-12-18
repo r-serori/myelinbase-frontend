@@ -1,54 +1,67 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useUpload } from "@/hooks/useUpload";
+import { useMemo, useRef, useState } from "react";
+import { useUpload, UploadProgress } from "@/hooks/useUpload";
 import { useDocumentStatus } from "@/hooks/useDocuments";
-import { Upload } from "lucide-react";
-import type { DocumentItem } from "@/lib/types";
+import { Upload, AlertTriangle, Star, FolderUp } from "lucide-react";
+import {
+  DocumentResponse,
+  UploadRequestRequestSchema,
+  ALLOWED_EXTENSIONS,
+} from "@/lib/schemas/document";
+import { getErrorMessage } from "@/lib/error-mapping";
+import { useToast } from "../ui/ToastProvider";
+import Spinner from "../ui/Spinner";
+import { Button } from "../ui/Button";
+import { cn, parseTags } from "@/lib/utils";
+import { Text } from "../ui/Text";
+import Input from "../ui/Input";
+import { DropdownItem, DropdownList } from "../ui/DropDownList";
+import TagChip from "./TagChip";
+import Alert from "../ui/Alert";
+import Tooltip from "../ui/ToolTip";
+import { Modal } from "../ui/Modal";
+import FilePreviewList, { Preview } from "./FilePreviewList";
+import { useFileSelection } from "@/hooks/useFileSelection";
 
-type Preview =
-  | { kind: "text"; name: string; size: number; mime: string; snippet: string }
-  | { kind: "image"; name: string; size: number; mime: string; url: string }
-  | { kind: "pdf"; name: string; size: number; mime: string; url: string }
-  | { kind: "binary"; name: string; size: number; mime: string };
+const MAX_DISPLAY_TAGS = 20;
+const ACCEPT_STRING = ALLOWED_EXTENSIONS.join(" ");
 
 export default function UploadForm({
   onUploaded,
-  showGuide,
   allTags,
 }: {
-  onUploaded?: (docs: DocumentItem[]) => void;
-  showGuide?: boolean;
+  onUploaded?: (docs: DocumentResponse[]) => void;
   allTags?: string[];
 }) {
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<Preview[]>([]);
-  const [lastDocId, setLastDocId] = useState<string | null>(null);
-  const [uploadingCount, setUploadingCount] = useState<number>(0);
+  const folderRef = useRef<HTMLInputElement | null>(null);
+
+  // ファイル選択ロジック
+  const {
+    selectedFiles,
+    previews,
+    errorMessage,
+    setErrorMessage,
+    addFiles,
+    removeFile,
+    clearFiles,
+  } = useFileSelection();
+
   const [tagsInput, setTagsInput] = useState<string>("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageType, setMessageType] = useState<"success" | "error" | null>(
-    null
-  );
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [showTagSuggestions, setShowTagSuggestions] = useState<boolean>(false);
-  const upload = useUpload();
-  const { data: statusData } = useDocumentStatus(lastDocId || undefined);
+  const [previewingFile, setPreviewingFile] = useState<Preview | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<
+    Record<string, UploadProgress>
+  >({});
 
-  function parseTags(value: string): string[] {
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const part of value.split(",")) {
-      const v = part.trim();
-      if (v && !seen.has(v)) {
-        seen.add(v);
-        out.push(v);
-      }
-    }
-    return out;
-  }
+  const { showToast } = useToast();
+  const { uploadAsync, isPending } = useUpload();
 
   const currentTags = useMemo(() => parseTags(tagsInput), [tagsInput]);
+  const visibleTags = currentTags.slice(0, MAX_DISPLAY_TAGS);
+  const hiddenCount = currentTags.length - MAX_DISPLAY_TAGS;
+  const isOverLimit = currentTags.length > MAX_DISPLAY_TAGS;
 
   const normalizedAllTags = Array.from(
     new Set((allTags || []).map((t) => t.trim()).filter((t) => t.length > 0))
@@ -62,60 +75,15 @@ export default function UploadForm({
     const parts = tagsInput.split(",");
     const last = parts[parts.length - 1]?.trim().toLowerCase();
     if (!last) {
-      // 入力が空のときは全タグを表示（ただし未選択のもののみ）
       return availableTags;
     }
     return availableTags.filter((tag) => tag.toLowerCase().includes(last));
   })();
 
-  useEffect(() => {
-    // cleanup object URLs on unmount
-    return () => {
-      previews.forEach((p) => {
-        if ((p.kind === "image" || p.kind === "pdf") && p.url) {
-          URL.revokeObjectURL(p.url);
-        }
-      });
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function buildPreviews(files: File[]) {
-    const out: Preview[] = [];
-    for (const f of files) {
-      const mime = f.type || "application/octet-stream";
-      if (mime.startsWith("text/") || mime === "application/json") {
-        const text = await f.text();
-        out.push({
-          kind: "text",
-          name: f.name,
-          size: f.size,
-          mime,
-          snippet: text.slice(0, 2000),
-        });
-      } else if (mime.startsWith("image/")) {
-        const url = URL.createObjectURL(f);
-        out.push({ kind: "image", name: f.name, size: f.size, mime, url });
-      } else if (mime === "application/pdf") {
-        const url = URL.createObjectURL(f);
-        out.push({ kind: "pdf", name: f.name, size: f.size, mime, url });
-      } else {
-        out.push({ kind: "binary", name: f.name, size: f.size, mime });
-      }
-    }
-    setPreviews(out);
-  }
-
-  function addFiles(files: File[]) {
-    if (!files.length) return;
-    const next = [...selectedFiles, ...files];
-    setSelectedFiles(next);
-    buildPreviews(next);
-  }
-
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     addFiles(files);
+    e.target.value = "";
   }
 
   function onDragOver(e: React.DragEvent<HTMLDivElement>) {
@@ -125,8 +93,6 @@ export default function UploadForm({
 
   function onDragLeave(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
-    // ラップ要素から完全に離れたときのみ解除したいが、
-    // シンプルに常に解除でも実用上問題ないためここではリセットする
     setIsDragging(false);
   }
 
@@ -137,21 +103,19 @@ export default function UploadForm({
     addFiles(files);
   }
 
-  function removeFile(name: string) {
-    const next = selectedFiles.filter((f) => f.name !== name);
-    setSelectedFiles(next);
-    buildPreviews(next);
-    if (fileRef.current && next.length === 0) {
-      fileRef.current.value = "";
-    }
+  function handleRemoveFile(name: string) {
+    removeFile(name);
+    const nextProgress = { ...uploadProgress };
+    delete nextProgress[name];
+    setUploadProgress(nextProgress);
   }
 
   function removeTagFromInput(tag: string) {
     const rest = currentTags.filter((t) => t !== tag);
     const next = rest.join(", ");
-    // 次の入力がしやすいように、タグが残っていれば末尾に「, 」を付ける
     setTagsInput(next ? `${next}, ` : "");
   }
+
   function onSelectTagSuggestion(tag: string) {
     const parts = tagsInput.split(",");
     if (parts.length <= 1) {
@@ -171,255 +135,377 @@ export default function UploadForm({
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (selectedFiles.length === 0) return;
-    setMessage(null);
-    setMessageType(null);
-    const parsedTags = currentTags;
-    if (parsedTags.length === 0) {
-      setMessage("タグを1つ以上入力してください。");
-      setMessageType("error");
+    setErrorMessage(null);
+
+    const validationTarget = {
+      files: selectedFiles.map((f) => ({
+        fileName: f.name,
+        contentType: f.type || "application/octet-stream",
+        fileSize: f.size,
+      })),
+      tags: currentTags,
+    };
+
+    const result = UploadRequestRequestSchema.safeParse(validationTarget);
+
+    if (!result.success) {
+      const issues = result.error.issues;
+      const tagError = issues.find((i) => i.path[0] === "tags");
+
+      if (tagError) {
+        if (tagError.code === "too_big") {
+          setErrorMessage(
+            `タグの数が多すぎます（上限${MAX_DISPLAY_TAGS}個）。`
+          );
+        } else {
+          setErrorMessage(tagError.message || "タグが不正です。");
+        }
+      } else if (issues.some((i) => i.path[0] === "files")) {
+        const hasExtensionError = issues.some(
+          (i) =>
+            i.path.includes("fileName") && i.message === "UNSUPPORTED_EXTENSION"
+        );
+
+        if (selectedFiles.length === 0) {
+          setErrorMessage("ファイルを選択してください。");
+        } else if (hasExtensionError) {
+          setErrorMessage(
+            `許可されていないファイル形式が含まれています。(${ALLOWED_EXTENSIONS.join(
+              ", "
+            )})`
+          );
+        } else {
+          const detailed = issues
+            .map((i) => i.message)
+            .filter(
+              (m) => m !== "UNSUPPORTED_EXTENSION" && m !== "Required"
+            )[0];
+          setErrorMessage(detailed || "ファイル情報が不正です。");
+        }
+      } else {
+        setErrorMessage("入力内容に不備があります。");
+      }
       return;
     }
-    let lastId: string | null = null;
-    const total = selectedFiles.length;
-    setUploadingCount(selectedFiles.length);
+
+    const initialProgress: Record<string, UploadProgress> = {};
+    selectedFiles.forEach((f) => {
+      initialProgress[f.name] = {
+        fileName: f.name,
+        status: "pending",
+        progress: 0,
+      };
+    });
+    setUploadProgress(initialProgress);
+
     try {
-      // 1リクエストで複数送信（Nest AnyFilesInterceptor対応）
-      const res = (await upload.mutateAsync({
+      const res = await uploadAsync({
         files: selectedFiles,
-        config:
-          parsedTags.length > 0 ? { tags: parsedTags.join(", ") } : undefined,
-      })) as any;
-      if (Array.isArray(res?.results) && res.results.length > 0) {
-        lastId = res.results[res.results.length - 1]?.documentId ?? null;
-      } else if (res?.documentId) {
-        // 後方互換（単一レスポンス）
-        lastId = res.documentId;
+        tags: currentTags,
+      });
+
+      if (res.length > 0) {
+        const completedProgress: Record<string, UploadProgress> = {};
+        selectedFiles.forEach((f) => {
+          completedProgress[f.name] = {
+            fileName: f.name,
+            status: "completed",
+            progress: 100,
+          };
+        });
+        setUploadProgress(completedProgress);
+
+        onUploaded?.([]);
+        showToast({ type: "success", message: "アップロードが完了しました" });
+
+        setTimeout(() => {
+          clearFiles();
+          setTagsInput("");
+          setUploadProgress({});
+          if (fileRef.current) fileRef.current.value = "";
+        }, 3000);
       }
-      if (lastId) {
-        setLastDocId(lastId);
-        // モック利用時のみ、フロント側で即時反映用の DocumentItem を生成して返す
-        if (process.env.NEXT_PUBLIC_USE_MOCKS === "true") {
-          const now = new Date().toISOString();
-          const mockDocs: DocumentItem[] = selectedFiles.map((file, index) => ({
-            documentId: `local-${Date.now()}-${index}`,
-            fileName: file.name,
-            status: "PENDING",
-            createdAt: now,
-            tags: parsedTags,
-            tagStatus: "PENDING",
-          }));
-          onUploaded?.(mockDocs);
-        }
-        setMessage(
-          `${total}件のアップロードを受け付けました。タグ算出中です。しばらくしてからステータスをご確認ください。`
-        );
-        setMessageType("success");
-      }
-    } catch (err) {
-      setMessage(
-        "アップロードに失敗しました。時間をおいて再度お試しください。"
-      );
-      setMessageType("error");
-    } finally {
-      setUploadingCount(0);
-      // clear
-      setSelectedFiles([]);
-      setPreviews([]);
-      setTagsInput("");
-      if (fileRef.current) fileRef.current.value = "";
+    } catch (err: any) {
+      const friendlyMessage = getErrorMessage(err);
+      showToast({ type: "error", message: friendlyMessage });
+
+      const errorProgress: Record<string, UploadProgress> = {};
+      selectedFiles.forEach((f) => {
+        errorProgress[f.name] = {
+          fileName: f.name,
+          status: "error",
+          progress: 0,
+        };
+      });
+      setUploadProgress(errorProgress);
     }
   }
 
   return (
-    <div className="space-y-3">
-      {showGuide && (
-        <p className="text-xs text-gray-600">
-          1. ファイルを選択 → 2. タグを入力（必須）→ 3.
-          「アップロード」を押すと、後からタグでドキュメントを検索しやすくなります。
-        </p>
-      )}
-      <form onSubmit={onSubmit} className="space-y-2">
+    <div>
+      <form onSubmit={onSubmit}>
+        <Input
+          id="fileInput"
+          ref={fileRef}
+          type="file"
+          multiple
+          accept={ACCEPT_STRING}
+          className="hidden"
+          onChange={onFileChange}
+        />
+        <input
+          id="folderInput"
+          ref={folderRef}
+          type="file"
+          multiple
+          // @ts-ignore
+          webkitdirectory=""
+          directory=""
+          className="hidden"
+          onChange={onFileChange}
+        />
         <div
-          className={`flex flex-wrap items-center gap-3 border-2 border-dashed rounded px-3 py-2 transition-colors ${
-            isDragging
-              ? "border-blue-400 bg-blue-50"
-              : "border-gray-300 bg-white"
-          }`}
+          className={`
+            relative flex flex-col items-center justify-center gap-3 
+            border-2 border-dashed border-border rounded-lg p-6 transition-all cursor-pointer
+            ${
+              isDragging
+                ? "border-primary bg-primary/10 scale-[1.01]"
+                : "border-border bg-muted/20 hover:bg-accent"
+            }
+          `}
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
           onDrop={onDrop}
+          onClick={() => fileRef.current?.click()}
         >
-          <div className="flex flex-col gap-1">
-            <input
-              id="fileInput"
-              ref={fileRef}
-              type="file"
-              multiple
-              className="border rounded px-2 py-1 text-sm cursor-pointer hover:bg-gray-100"
-              onChange={onFileChange}
+          <div className="bg-background p-3 rounded-full shadow-sm">
+            <Upload
+              className={`size-6 ${
+                isDragging ? "text-primary" : "text-muted-foreground"
+              }`}
             />
-            <span className="text-[11px] text-gray-500">
-              ファイルをここにドラッグ＆ドロップするか、「ファイルを選択」で指定してください。
-            </span>
           </div>
-          <div className="flex flex-col md:flex-row md:items-start gap-3 w-full">
-            <div className="flex-1 min-w-[220px] space-y-1">
-              <label
-                htmlFor="tagsInput"
-                className="text-xs text-gray-600"
-                title="アップロードしたファイルを分類するためのタグです。例: 就業規程, コンプライアンス。後からタグで検索・絞り込みできます。"
-              >
-                タグ（必須）
-              </label>
-              <div className="relative">
-                <input
-                  id="tagsInput"
-                  type="text"
-                  value={tagsInput}
-                  onFocus={() => setShowTagSuggestions(true)}
-                  onClick={() => setShowTagSuggestions(true)}
-                  onChange={(e) => {
-                    setShowTagSuggestions(true);
-                    setTagsInput(e.target.value);
-                  }}
-                  onBlur={() => setShowTagSuggestions(false)}
-                  className="border rounded px-2 py-1 text-sm w-full"
-                  placeholder="例: 就業規則, コンプライアンス"
-                />
-                {tagSuggestions.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full max-h-40 overflow-y-auto rounded border bg-white shadow-sm text-xs">
-                    {tagSuggestions.map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        className="w-full text-left px-2 py-1 hover:bg-gray-100"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          onSelectTagSuggestion(tag);
+          <div className="text-center space-y-1">
+            <Text variant="md" color="muted" leading="relaxed">
+              クリックしてファイルを選択 または ドラッグ＆ドロップ
+              <br />
+              対応形式: {ALLOWED_EXTENSIONS.join("  ")} (最大 50MB)
+            </Text>
+          </div>
+
+          <div className="absolute bottom-2 right-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                folderRef.current?.click();
+              }}
+            >
+              <FolderUp className="size-3.5 mr-1" />
+              フォルダを選択
+            </Button>
+          </div>
+        </div>
+
+        {errorMessage && (
+          <Alert color="destructive">
+            <Text
+              variant="md"
+              color="destructive"
+              weight="medium"
+              leading="relaxed"
+            >
+              {errorMessage}
+            </Text>
+          </Alert>
+        )}
+
+        {selectedFiles.length > 0 && (
+          <div className="bg-background border rounded-lg p-4 shadow-sm">
+            <div className="pb-4">
+              <div className="flex flex-col md:flex-row md:items-start gap-4">
+                <div className="flex-1 space-y-2">
+                  <Text
+                    htmlFor="uploadFormTagsInput"
+                    as="label"
+                    variant="md"
+                    color="muted"
+                    weight="semibold"
+                    className="flex gap-2 items-center relative"
+                  >
+                    タグ
+                    <Text variant="xs" color="muted" weight="normal" as="span">
+                      任意
+                    </Text>
+                    <Tooltip position="top-0 left-24" circleSize={5}>
+                      <div className="space-y-1">
+                        <Text
+                          variant="md"
+                          weight="semibold"
+                          className="flex items-center gap-1"
+                        >
+                          <Star className="size-4" />
+                          おすすめの方法:
+                        </Text>
+                        <br />
+                        <Text variant="sm" weight="medium">
+                          ファイルパス名をつけることで、ファイルを管理しやすくなります。
+                        </Text>
+                        <Text variant="sm" weight="medium" leading="relaxed">
+                          例:
+                          <br /> ・ファイルのパス:
+                          /MyelinBaseソリューション部/社内資料/20251214就業規則.pdf
+                          <br />
+                          ・タグ: MyelinBaseソリューション部, 社内資料, 就業規則
+                        </Text>
+                      </div>
+                    </Tooltip>
+                  </Text>
+                  <div className="flex items-center gap-2 flex-wrap md:flex-nowrap">
+                    <div className="relative flex-1">
+                      <Input
+                        id="uploadFormTagsInput"
+                        size="md"
+                        value={tagsInput}
+                        onFocus={() => setShowTagSuggestions(true)}
+                        onClick={() => setShowTagSuggestions(true)}
+                        onChange={(e) => {
+                          setShowTagSuggestions(true);
+                          setTagsInput(e.target.value);
                         }}
+                        onBlur={() =>
+                          setTimeout(() => setShowTagSuggestions(false), 200)
+                        }
+                        className={`${
+                          isOverLimit && "border-warning"
+                        } md:w-full`}
+                        placeholder="例: 就業規則, 議事録 (カンマ区切りで複数可)"
+                      />
+                      {showTagSuggestions && tagSuggestions.length > 0 && (
+                        <DropdownList size="md">
+                          {tagSuggestions.map((tag, index) => (
+                            <DropdownItem
+                              key={tag + index}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                onSelectTagSuggestion(tag);
+                              }}
+                            >
+                              {tag}
+                            </DropdownItem>
+                          ))}
+                        </DropdownList>
+                      )}
+                    </div>
+                    <div className="shrink-0 ml-auto">
+                      <Button
+                        size="sm"
+                        type="submit"
+                        className={cn(
+                          (isPending || isOverLimit) &&
+                            "bg-primary/70 cursor-not-allowed hover:bg-primary/70"
+                        )}
+                        disabled={
+                          isPending || selectedFiles.length === 0 || isOverLimit
+                        }
                       >
-                        {tag}
-                      </button>
-                    ))}
+                        {isPending ? (
+                          <Spinner size="3.5" color="background" />
+                        ) : (
+                          <Upload className="size-3.5" />
+                        )}
+                        <Text
+                          variant="sm"
+                          color="white"
+                          weight="semibold"
+                          as="span"
+                        >
+                          アップロード開始
+                        </Text>
+                      </Button>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
+
+              {isOverLimit && (
+                <Alert color="warning">
+                  <AlertTriangle className="size-4 shrink-0" />
+                  <Text variant="sm" color="warning" weight="medium">
+                    タグの上限（{MAX_DISPLAY_TAGS}個）を超えています。
+                    更新するにはタグを減らしてください。
+                  </Text>
+                </Alert>
+              )}
+
               {currentTags.length > 0 && (
-                <div className="mt-1 text-[11px] text-gray-600 flex flex-wrap items-center gap-1">
-                  <span className="font-semibold">付与されるタグ:</span>
-                  {currentTags.map((tag) => (
-                    <span
+                <div className="flex flex-wrap gap-2 pt-3">
+                  {visibleTags.map((tag) => (
+                    <TagChip
+                      isDeleted={true}
                       key={tag}
-                      className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 bg-gray-50"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        className="text-[10px] text-gray-500 hover:text-gray-800"
-                        onClick={() => removeTagFromInput(tag)}
-                        aria-label={`${tag} を削除`}
-                      >
-                        ×
-                      </button>
-                    </span>
+                      tag={tag}
+                      onClick={() => removeTagFromInput(tag)}
+                    />
                   ))}
+                  {hiddenCount > 0 && (
+                    <Text
+                      variant="sm"
+                      color="warning"
+                      weight="medium"
+                      className="inline-flex items-center gap-1"
+                    >
+                      <AlertTriangle className="size-3" />+{hiddenCount}
+                    </Text>
+                  )}
                 </div>
               )}
             </div>
-            <button
-              className="border rounded px-3 py-1 flex items-center gap-1 cursor-pointer hover:bg-blue-600 bg-blue-500 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-500 md:self-start md:mt-auto"
-              disabled={upload.isPending || selectedFiles.length === 0}
-            >
-              <Upload className="w-4 h-4" />
-              {uploadingCount > 0
-                ? `アップロード中... (${uploadingCount}件残り)`
-                : "アップロード"}
-            </button>
+
+            <FilePreviewList
+              previews={previews}
+              onRemove={handleRemoveFile}
+              onPreviewClick={setPreviewingFile}
+              selectedFilesCount={selectedFiles.length}
+            />
           </div>
-        </div>
-        {lastDocId && (
-          <span className="text-sm text-gray-600">
-            最終アップロード: {statusData?.document?.fileName ?? lastDocId} /
-            ステータス:{" "}
-            {(() => {
-              const code = statusData?.document?.status;
-              if (code === "COMPLETED") return "完了";
-              if (code === "PROCESSING") return "処理中";
-              if (code === "PENDING") return "待機中";
-              if (code === "ERROR") return "エラー";
-              return "確認中...";
-            })()}
-          </span>
         )}
       </form>
 
-      {message && (
-        <div
-          className={`text-xs mt-1 ${
-            messageType === "error" ? "text-red-600" : "text-gray-700"
-          }`}
+      {previewingFile && (
+        <Modal
+          size="3xl"
+          isOpen={!!previewingFile}
+          title={previewingFile.name}
+          onClose={() => setPreviewingFile(null)}
         >
-          {message}
-        </div>
-      )}
-
-      {previews.length > 0 && (
-        <div className="border rounded p-3 space-y-2">
-          <div className="text-sm font-semibold">選択ファイルのプレビュー</div>
-          <ul className="space-y-3">
-            {previews.map((p) => (
-              <li key={p.name} className="border rounded p-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm">
-                    <span className="font-medium">{p.name}</span>{" "}
-                    <span className="text-gray-500">
-                      ({p.mime}, {(p.size / 1024).toFixed(1)} KB)
-                    </span>
-                  </div>
-                  <button
-                    className="text-xs border rounded px-2 py-0.5"
-                    onClick={() => removeFile(p.name)}
-                  >
-                    取消
-                  </button>
-                </div>
-                {p.kind === "text" && (
-                  <details className="mt-2">
-                    <summary className="text-xs cursor-pointer text-blue-600">
-                      内容を表示
-                    </summary>
-                    <pre className="mt-1 text-xs whitespace-pre-wrap break-words">
-                      {p.snippet}
-                    </pre>
-                  </details>
-                )}
-                {p.kind === "image" && (
-                  <img
-                    src={p.url}
-                    alt={p.name}
-                    className="mt-2 max-h-40 rounded border"
-                  />
-                )}
-                {p.kind === "pdf" && (
-                  <a
-                    href={p.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-2 inline-block text-xs text-blue-600 underline"
-                  >
-                    PDFプレビューを開く
-                  </a>
-                )}
-                {p.kind === "binary" && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    プレビュー非対応の形式です
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+          {previewingFile.kind === "text" && (
+            <div className="border border-border rounded-lg p-2 h-[70vh] overflow-y-auto custom-scrollbar flex flex-col bg-gray-50/30">
+              <pre className="w-full text-sm font-mono whitespace-pre-wrap break-all text-foreground">
+                {previewingFile.snippet}
+              </pre>
+              {previewingFile.snippet.length >= 2000 && (
+                <Text
+                  variant="sm"
+                  color="muted"
+                  className="mt-2 text-center border-t pt-2"
+                >
+                  --- 先頭 2000 文字のみ表示しています ---
+                </Text>
+              )}
+            </div>
+          )}
+          {previewingFile.kind === "pdf" && (
+            <iframe
+              src={previewingFile.url}
+              className="w-full h-[70vh] rounded border shadow-sm bg-background"
+              title="PDF Preview"
+            />
+          )}
+        </Modal>
       )}
     </div>
   );

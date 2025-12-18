@@ -1,20 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/apiClient";
-
-type FeedbackPayload = {
-  historyId: string;
-  feedback: "GOOD" | "BAD";
-  comment?: string;
-};
+import type { SubmitFeedbackRequest, SubmitFeedbackResponse } from "@/lib/schemas/chat";
 
 export function useChatFeedback() {
   return useMutation({
-    mutationFn: (payload: FeedbackPayload) =>
-      apiFetch("/chat/feedback", {
+    mutationFn: (payload: SubmitFeedbackRequest) =>
+      apiFetch<SubmitFeedbackResponse>("/chat/feedback", {
         method: "POST",
         body: JSON.stringify(payload),
       }),
   });
 }
-
-

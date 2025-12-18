@@ -1,20 +1,21 @@
 "use client";
 
 import type { RefObject } from "react";
-import type { ChatMessage } from "@/lib/types";
-import MessageItem from "./MessageItem";
-import Spinner from "../ui/Spinner";
+import type { MessageSummary, SourceDocument } from "@/lib/schemas/chat";
+import { Text } from "../ui/Text";
+import LightLoading from "../ui/LightLoading";
+import { useAuth } from "../../contexts/AuthContext";
+import { useMessageGrouping } from "@/hooks/useMessageGrouping";
+import UserMessage from "./message/UserMessage";
+import AiMessage from "./message/AiMessage";
 
 type FeedbackMutation = {
-  mutate: (args: {
-    historyId: string;
-    feedback: "GOOD" | "BAD";
-    comment?: string;
-  }) => void;
+  mutate: (args: any) => void;
 };
 
 type ChatMessagesPaneProps = {
-  messages: ChatMessage[];
+  sessionId?: string;
+  messages: MessageSummary[];
   isLoading: boolean;
   pendingUserMessage: string | null;
   pendingCreatedAt: string | null;
@@ -26,9 +27,14 @@ type ChatMessagesPaneProps = {
     options?: { redoHistoryId?: string }
   ) => Promise<void>;
   feedbackMutation: FeedbackMutation;
+  bottomPadding: number;
+  formHeight: number;
+  isStreaming: boolean;
+  onSourceClick: (doc: SourceDocument) => void;
 };
 
 export default function ChatMessagesPane({
+  sessionId,
   messages,
   isLoading,
   pendingUserMessage,
@@ -38,112 +44,141 @@ export default function ChatMessagesPane({
   latestUserMessageRef,
   onDoSend,
   feedbackMutation,
+  bottomPadding,
+  formHeight,
+  isStreaming,
+  onSourceClick,
 }: ChatMessagesPaneProps) {
+  const { user } = useAuth();
+  const { displayItems } = useMessageGrouping(messages);
+
+  // Pending Message の追加
+  const itemsWithPending = [...displayItems];
+  if (pendingUserMessage) {
+    itemsWithPending.push({
+      historyId: "pending",
+      userQuery: pendingUserMessage,
+      aiResponse: streamingAnswer || "",
+      createdAt: pendingCreatedAt || new Date().toISOString(),
+      sourceDocuments: [],
+      feedback: "NONE",
+      versionInfo: { current: 1, total: 1, onPrev: () => {}, onNext: () => {} },
+    } as any);
+  }
+
+  const lastItemMinHeight = `calc(100vh - ${formHeight}px - 120px)`;
+
   return (
-    <div className="max-w-3xl w-full mx-auto p-4 pb-10 space-y-3">
-      {isLoading && <div className="text-gray-500 text-sm">Loading...</div>}
+    <div
+      className="max-w-3xl w-full mx-auto p-4 space-y-6"
+      style={{ paddingBottom: `${bottomPadding}px` }}
+    >
+      {isLoading && <LightLoading isLoading={isLoading} />}
 
-      {messages.map((m, index) => {
-        if (redoingHistoryId && m.historyId === redoingHistoryId) {
-          // redo/edit の対象ターンは一時的に非表示にする
-          return null;
-        }
-        const isLatest = index === messages.length - 1;
-        return (
-          <div
-            key={m.historyId}
-            className="space-y-1"
-            ref={isLatest ? latestUserMessageRef : undefined}
-          >
-            <MessageItem
-              role="user"
-              text={m.userQuery}
-              createdAt={m.createdAt}
-              isLatest={isLatest}
-              historyId={m.historyId}
-              onCopy={async (text) => {
-                if (
-                  typeof navigator !== "undefined" &&
-                  navigator.clipboard?.writeText
-                ) {
-                  try {
-                    await navigator.clipboard.writeText(text);
-                  } catch (err) {
-                    console.error("コピーに失敗しました:", err);
-                  }
-                }
-              }}
-              onEditAndResend={(newText, historyId) => {
-                void onDoSend(newText, { redoHistoryId: historyId });
-              }}
-            />
-            <MessageItem
-              role="ai"
-              text={m.aiResponse}
-              isLatest={isLatest}
-              historyId={m.historyId}
-              onCopy={async (text) => {
-                if (
-                  typeof navigator !== "undefined" &&
-                  navigator.clipboard?.writeText
-                ) {
-                  try {
-                    await navigator.clipboard.writeText(text);
-                  } catch (err) {
-                    console.error("コピーに失敗しました:", err);
-                  }
-                }
-              }}
-              onRedo={() => {
-                void onDoSend(m.userQuery, { redoHistoryId: m.historyId });
-              }}
-              onGoodFeedback={(historyId) => {
-                if (!historyId) return;
-                feedbackMutation.mutate({
-                  historyId,
-                  feedback: "GOOD",
-                });
-              }}
-              onBadFeedback={(historyId, reasons, comment) => {
-                if (!historyId) return;
-                const reasonText =
-                  reasons.length > 0 ? `Reasons: ${reasons.join(", ")}` : "";
-                const fullComment = [reasonText, comment]
-                  .filter((x) => x && x.trim().length > 0)
-                  .join("\n");
-                feedbackMutation.mutate({
-                  historyId,
-                  feedback: "BAD",
-                  comment: fullComment || undefined,
-                });
-              }}
-            />
-          </div>
-        );
-      })}
+      {!isLoading &&
+        itemsWithPending.map((m, index) => {
+          const isLatest = index === itemsWithPending.length - 1;
+          const { current, total, onPrev, onNext } = m.versionInfo;
+          const isPending = m.historyId === "pending";
 
-      {/* 楽観的な最新メッセージ表示（送信直後〜レスポンス取得まで） */}
-      {pendingUserMessage && (
-        <div className="space-y-1">
-          <div className="w-full flex justify-start mt-12">
-            <div className="max-w-[80%] rounded-xl px-3 py-2 text-sm bg-gray-100 flex items-center gap-2">
-              <Spinner />
-              <span className="text-xs text-gray-500">
-                Myelinが応答を生成しています...
-              </span>
+          const isGenerating =
+            (isStreaming && isPending && !m.aiResponse) ||
+            (isStreaming && m.historyId === redoingHistoryId);
+
+          const displayAiResponse =
+            m.historyId === redoingHistoryId && isStreaming
+              ? streamingAnswer || ""
+              : m.aiResponse || "";
+
+          return (
+            <div
+              key={`${m.historyId}-${current}`}
+              className="space-y-1 relative"
+              ref={isLatest ? latestUserMessageRef : undefined}
+              style={isLatest ? { minHeight: lastItemMinHeight } : undefined}
+            >
+              <UserMessage
+                text={m.userQuery}
+                createdAt={m.createdAt}
+                isLatest={isLatest && current === total}
+                historyId={m.historyId}
+                onCopy={async (text) => {
+                  if (
+                    typeof navigator !== "undefined" &&
+                    navigator.clipboard?.writeText
+                  ) {
+                    await navigator.clipboard.writeText(text);
+                  }
+                }}
+                onEditAndResend={(newText, historyId) => {
+                  if (!isPending) {
+                    void onDoSend(newText, { redoHistoryId: historyId });
+                  }
+                }}
+              />
+
+              <AiMessage
+                text={displayAiResponse}
+                createdAt={m.createdAt} // AI応答の日時も同じでよいか？ 通常は別だがSummary上は同じ
+                isLatest={isLatest && current === total}
+                historyId={m.historyId}
+                isGenerating={isGenerating}
+                currentVersion={current}
+                totalVersions={total}
+                sourceDocuments={m.sourceDocuments}
+                onCopy={async (text) => {
+                  if (
+                    typeof navigator !== "undefined" &&
+                    navigator.clipboard?.writeText
+                  ) {
+                    await navigator.clipboard.writeText(text);
+                  }
+                }}
+                onPrevVersion={onPrev}
+                onNextVersion={onNext}
+                onSourceClick={onSourceClick}
+                onRedo={() => {
+                  if (!isPending) {
+                    void onDoSend(m.userQuery, { redoHistoryId: m.historyId });
+                  }
+                }}
+                onGoodFeedback={(historyId) => {
+                  if (!historyId || !sessionId || isPending) return;
+                  feedbackMutation.mutate({
+                    sessionId,
+                    historyId,
+                    createdAt: m.createdAt,
+                    evaluation: "GOOD",
+                  });
+                }}
+                onBadFeedback={(historyId, reasons, comment) => {
+                  if (!historyId || !sessionId || isPending) return;
+                  feedbackMutation.mutate({
+                    sessionId,
+                    historyId,
+                    createdAt: m.createdAt,
+                    evaluation: "BAD",
+                    comment: comment,
+                    reasons,
+                  });
+                }}
+              />
             </div>
-          </div>
-        </div>
-      )}
+          );
+        })}
 
-      {streamingAnswer && streamingAnswer.length > 0 && (
-        <div className="space-y-1">
-          <MessageItem role="ai" text={streamingAnswer} isLatest />
+      {itemsWithPending.length === 0 && !isLoading && (
+        <div className="flex items-center gap-2">
+          <img
+            src="/images/icon.png"
+            alt="Myelin Base Logo"
+            width={32}
+            height={32}
+          />
+          <Text variant="lg" className="pl-1">
+            {user?.nickname}さん、こんにちは！
+          </Text>
         </div>
-      )}
-
-      {messages.length === 0 && !isLoading && !pendingUserMessage && (
-        <div className="text-gray-500 text-sm">メッセージはありません。</div>
       )}
     </div>
   );

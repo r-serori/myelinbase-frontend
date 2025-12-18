@@ -1,10 +1,13 @@
 "use client";
 import RequireAuth from "@/components/auth/RequireAuth";
 import ChatWindow from "@/components/chat/ChatWindow";
+// useSessions はサイドバー用には必要ですが、ここでのリダイレクト判定には使いません
 import { useSessions } from "@/hooks/useSessions";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SessionSideBar from "@/components/chat/SessionSideBar";
+import DocumentPreviewSidebar from "@/components/chat/DocumentPreviewSidebar";
+import { SourceDocument } from "@/lib/schemas/chat";
 
 export default function ChatPage() {
   return (
@@ -15,48 +18,52 @@ export default function ChatPage() {
 }
 
 function Main() {
-  const { data, isLoading } = useSessions();
   const router = useRouter();
   const search = useSearchParams();
-  const currentSessionId = search.get("sessionId") || undefined;
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isNewSession, setIsNewSession] = useState(false);
 
-  useEffect(() => {
-    const first = data?.sessions?.[0];
-    if (!isLoading && first && !currentSessionId && !isNewSession) {
-      router.replace(`/chat?sessionId=${first.sessionId}`);
-    }
-  }, [data, isLoading, router, currentSessionId, isNewSession]);
+  const currentSessionId = search.get("sessionId") || undefined;
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeDocument, setActiveDocument] = useState<SourceDocument | null>(
+    null
+  );
 
   return (
-    <div className="flex h-[calc(100vh-48px)] relative">
+    <div className="flex relative h-full overflow-hidden">
       <SessionSideBar
         currentSessionId={currentSessionId}
         sidebarCollapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
         onNewChat={() => {
-          setIsNewSession(true);
           router.replace("/chat");
         }}
       />
 
       <section
-        className={`h-full flex-1 flex flex-col ease-out transition-[margin] duration-200 ${
-          sidebarCollapsed ? "ml-16" : "md:ml-72"
+        className={`flex-1 flex flex-col h-full overflow-hidden ease-out transition-[margin] duration-200 ${
+          sidebarCollapsed ? "ml-16" : "md:ml-56"
+        } ${activeDocument ? "mr-0 md:mr-[600px]" : ""}`}
+      >
+        <ChatWindow
+          sessionId={currentSessionId}
+          isDocumentPreviewOpen={!!activeDocument}
+          sidebarCollapsed={sidebarCollapsed}
+          onSourceClick={(doc) => setActiveDocument(doc)}
+        />
+      </section>
+
+      {/* 右サイドバー (ドキュメントプレビュー) */}
+      <aside
+        className={`fixed top-12 right-0 bottom-0 w-full rounded-xs lg:w-[600px] bg-secondary border border-primary/20 z-60 transform transition-transform duration-300 ease-in-out ${
+          activeDocument ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {currentSessionId || isNewSession ? (
-          <ChatWindow
-            sessionId={currentSessionId}
-            sidebarCollapsed={sidebarCollapsed}
-          />
-        ) : (
-          <div className="h-full flex items-center justify-center text-gray-500">
-            チャットを新規作成してください
-          </div>
-        )}
-      </section>
+        <DocumentPreviewSidebar
+          document={activeDocument}
+          isOpen={!!activeDocument}
+          onClose={() => setActiveDocument(null)}
+        />
+      </aside>
     </div>
   );
 }

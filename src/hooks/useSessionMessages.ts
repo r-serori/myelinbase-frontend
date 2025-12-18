@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/apiClient";
-import type { SessionMessagesResponse } from "@/lib/types";
+import type { GetSessionMessagesResponse } from "@/lib/schemas/chat";
 import { queryKeys } from "@/lib/queryKeys";
 
 export function useSessionMessages(
@@ -8,7 +8,7 @@ export function useSessionMessages(
   limit = 30,
   order: "asc" | "desc" = "desc"
 ) {
-  return useInfiniteQuery<SessionMessagesResponse>({
+  return useInfiniteQuery<GetSessionMessagesResponse>({
     queryKey: queryKeys.sessionMessages(sessionId || ""),
     initialPageParam: null as string | null,
     queryFn: ({ pageParam }) => {
@@ -16,11 +16,12 @@ export function useSessionMessages(
         pageParam == null
           ? ""
           : `&cursor=${encodeURIComponent(pageParam as string)}`;
-      return apiFetch(
-        `/chat/session/${sessionId}?limit=${limit}&order=${order}${cursorParam}`
+      // バックエンドのエンドポイントパスに合わせて修正: /chat/session/:id -> /chat/sessions/:id
+      return apiFetch<GetSessionMessagesResponse>(
+        `/chat/sessions/${sessionId}?limit=${limit}&order=${order}${cursorParam}`
       );
     },
-    getNextPageParam: (last) => last.nextToken ?? undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     staleTime: 60_000,
     gcTime: 600_000,
     refetchOnMount: false,

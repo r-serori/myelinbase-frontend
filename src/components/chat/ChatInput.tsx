@@ -1,12 +1,16 @@
 "use client";
 
 import { Maximize, Mic, Minimize, SendHorizonal, Square } from "lucide-react";
-import Tooltip from "../ui/Tooltip";
-import Spinner from "../ui/Spinner";
+import ChatTooltip from "./ChatTooltip";
 import Link from "next/link";
 import { RefObject } from "react";
+import { Button } from "../ui/Button";
+import { Text } from "../ui/Text";
+import router from "next/router";
+import { cn } from "@/lib/utils";
 
 type ChatInputProps = {
+  isDocumentPreviewOpen: boolean;
   input: string;
   onChangeInput: (value: string) => void;
   onSubmitByEnter: () => void | Promise<void>;
@@ -15,13 +19,13 @@ type ChatInputProps = {
   isExpanded: boolean;
   onToggleExpanded: (next: boolean) => void;
   isStreamingAnswer: boolean;
-  isMutationPending: boolean;
   isRecording: boolean;
   formRef: RefObject<HTMLFormElement | null>;
   inputRef: RefObject<HTMLTextAreaElement | null>;
 };
 
 export default function ChatInput({
+  isDocumentPreviewOpen,
   input,
   onChangeInput,
   onSubmitByEnter,
@@ -30,47 +34,52 @@ export default function ChatInput({
   isExpanded,
   onToggleExpanded,
   isStreamingAnswer,
-  isMutationPending,
   isRecording,
   formRef,
   inputRef,
 }: ChatInputProps) {
   const inputLines = input.split("\n").length;
 
-  const bgClass = isExpanded
-    ? "bg-gradient-to-t from-white/100 from-96% to-transparent"
-    : inputLines >= 6
-    ? "bg-gradient-to-t from-white/100 from-88% to-transparent"
-    : inputLines >= 3
-    ? "bg-gradient-to-t from-white/100 from-85% to-transparent"
-    : "bg-gradient-to-t from-white/100 from-80% to-transparent";
-
   return (
     <form
       id="chat-form"
       ref={formRef}
-      className={`fixed bottom-0 left-0 right-0 ${bgClass} px-4 py-5 pt-10 z-10 ${
-        sidebarCollapsed ? "ml-16" : "md:ml-72 ease-out"
-      } transition-[margin] duration-200`}
+      className={`fixed bottom-0 left-0 right-0 z-20 ${
+        sidebarCollapsed ? "ml-16" : "md:ml-56 ease-out"
+      } transition-[margin] duration-200 ${
+        isDocumentPreviewOpen ? "mr-[600px]" : ""
+      }`}
     >
-      <div className="w-full flex items-center justify-center flex-col bg-white">
-        <div className="max-w-3xl flex w-full mx-auto border border-gray-200 rounded-2xl p-1 shadow-md bg-white">
-          <div className="flex-1 flex items-center px-4 py-3">
+      <div
+        className="absolute inset-0 -z-10 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(to top, rgba(255,255,255,1) 50%, rgba(255,255,255,0.8) 70%, rgba(255,255,255,0) 100%)",
+          height: "calc(100% + 40px)",
+          bottom: "0",
+          transform: "translateY(-40px)",
+        }}
+      />
+
+      <div className="w-full flex items-center justify-center flex-col px-4 pb-6 pt-2">
+        <div className="max-w-3xl flex w-full mx-auto bg-background border border-input rounded-[28px] p-2 shadow-sm transition-all duration-200">
+          <div className="flex-1 flex items-center px-2 py-2">
             <textarea
               id="input-textarea"
               ref={inputRef}
-              className="flex-1 text-sm outline-none border-none bg-white focus:ring-0 outline-none resize-none overflow-hidden"
-              placeholder="質問を入力してください（Shift+Enter で改行）"
+              className="flex-1 text-sm bg-transparent border-none focus:ring-0 outline-none resize-none overflow-hidden text-foreground placeholder:text-muted-foreground leading-6 ml-2"
+              placeholder="質問を入力してください"
               value={input}
               onChange={(e) => onChangeInput(e.target.value)}
               rows={1}
+              style={{
+                minHeight: "24px",
+                maxHeight: isExpanded ? "60vh" : "200px",
+              }}
               onKeyDown={(e) => {
                 if (
                   e.key === "Enter" &&
                   !e.shiftKey &&
-                  // 日本語入力確定中の Enter を誤送信にしないため
-                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                  // @ts-ignore
                   !e.nativeEvent.isComposing
                 ) {
                   e.preventDefault();
@@ -79,88 +88,77 @@ export default function ChatInput({
               }}
             />
           </div>
-          <div className="flex flex-col items-center py-2 mr-2 gap-1">
-            {/* 8行以上になったら Maximize ボタンを表示 */}
+
+          <div className="flex flex-col justify-between py-1 pr-1 gap-1">
             {inputLines >= 8 && !isExpanded && (
-              <button
-                type="button"
-                className="rounded-full p-1 hover:bg-gray-200"
+              <Button
+                variant="close"
+                size="icon"
                 onClick={() => onToggleExpanded(true)}
-                aria-label="入力欄を拡大"
               >
-                <Maximize className="w-5 h-5 text-gray-900" />
-              </button>
+                <Maximize className="size-4" />
+              </Button>
             )}
             {isExpanded && (
-              <button
-                type="button"
-                className="rounded-full p-1 hover:bg-gray-200"
+              <Button
+                variant="close"
+                size="icon"
                 onClick={() => onToggleExpanded(false)}
-                aria-label="入力欄を縮小"
               >
-                <Minimize className="w-5 h-5 text-gray-900" />
-              </button>
+                <Minimize className="size-4" />
+              </Button>
             )}
-            <div className="flex-1 flex items-end justify-end">
-              <Tooltip
+
+            <div className="flex items-end">
+              <ChatTooltip
                 content={
                   isStreamingAnswer
                     ? "生成を停止"
-                    : input.trim().length > 0
+                    : input.trim().length > 0 && !isRecording
                     ? "送信"
                     : isRecording
                     ? "録音を停止"
-                    : "音声モードを使用"
+                    : "音声入力"
                 }
               >
                 <button
-                  id="send-button"
+                  id="chat-send-button"
                   type="button"
-                  className={`rounded-full p-2 text-sm font-medium shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
-                    input.trim().length > 0
-                      ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                      : isRecording
-                      ? "bg-blue-200 text-gray-900 hover:bg-blue-300"
-                      : "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                  }`}
-                  aria-label={
-                    isStreamingAnswer
-                      ? "生成を停止"
-                      : input.trim().length > 0
-                      ? "送信"
-                      : isRecording
-                      ? "録音を停止"
-                      : "音声モードを使用"
-                  }
-                  disabled={isMutationPending && !isStreamingAnswer}
+                  className={cn(
+                    "rounded-full p-2.5 transition-all duration-200 flex items-center justify-center cursor-pointer shadow-md",
+                    isRecording
+                      ? "bg-primary/10 text-primary hover:bg-primary/50 animate-pulse scale-120"
+                      : "bg-muted/40 text-foreground hover:bg-muted/80"
+                  )}
                   onClick={() => {
                     void onClickSendButton();
                   }}
                 >
                   {isStreamingAnswer ? (
-                    <Square className="w-5 h-5 text-gray-900" />
-                  ) : isMutationPending ? (
-                    <Spinner />
-                  ) : input.length > 0 ? (
-                    <SendHorizonal className="w-5 h-5 text-gray-900" />
+                    <Square className="size-4 fill-current" />
+                  ) : input.trim().length > 0 && !isRecording ? (
+                    <SendHorizonal className="size-5" />
                   ) : (
-                    <Mic className="w-5 h-5 text-gray-900" />
+                    <Mic className="size-5" />
                   )}
                 </button>
-              </Tooltip>
+              </ChatTooltip>
             </div>
           </div>
         </div>
-        <p className="text-[10px] text-gray-500 text-center mt-4">
-          このチャットはモデルのトレーニングには使用されません。Myelin
-          は不正確な情報を表示することがあるため、生成された回答を再確認するようにしてください。
-          <Link href="/privacy" className="text-blue-500 hover:underline">
-            プライバシーとMyelin
-          </Link>
-        </p>
+        <Text variant="sm" color="muted" className="mt-3 select-none max-w-3xl">
+          Myelin Baseのチャットはモデルのトレーニングには使用されません。 Myelin
+          Baseは不正確な情報を表示することがあるため、回答を再確認してください。
+          <Button
+            variant="link"
+            size="link"
+            onClick={() => router.push("/privacy")}
+            className="text-xs"
+          >
+            プライバシーについて
+          </Button>
+        </Text>
       </div>
     </form>
   );
 }
-
-

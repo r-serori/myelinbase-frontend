@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_レイヤー_2" data-name="レイヤー 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 150.65 130.47">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#_名称未設定グラデーション_1231);
+      }
+
+      .cls-2 {
+        fill: url(#_名称未設定グラデーション_1160);
+      }
+    </style>
+    <radialGradient id="_名称未設定グラデーション_1160" data-name="名称未設定グラデーション 1160" cx="74.26" cy="82.01" fx="74.26" fy="82.01" r="63.1" gradientUnits="userSpaceOnUse">
+      <stop offset=".28" stop-color="aqua"/>
+      <stop offset=".31" stop-color="#0be4fc"/>
+      <stop offset=".36" stop-color="#2aa1f6"/>
+      <stop offset=".44" stop-color="#5a37ed"/>
+      <stop offset=".45" stop-color="#6227ec"/>
+      <stop offset=".51" stop-color="#671aea" stop-opacity=".92"/>
+      <stop offset=".59" stop-color="#6f08e9" stop-opacity=".8"/>
+      <stop offset=".63" stop-color="#6e07e9" stop-opacity=".78"/>
+      <stop offset=".69" stop-color="#6c05e9" stop-opacity=".72"/>
+      <stop offset=".75" stop-color="#6a03e9" stop-opacity=".61"/>
+      <stop offset=".8" stop-color="#6700e9" stop-opacity=".5"/>
+      <stop offset=".82" stop-color="#6f18eb" stop-opacity=".54"/>
+      <stop offset=".88" stop-color="#8558f0" stop-opacity=".64"/>
+      <stop offset=".95" stop-color="#a8bef9" stop-opacity=".8"/>
+      <stop offset="1" stop-color="#beffff" stop-opacity=".9"/>
+    </radialGradient>
+    <radialGradient id="_名称未設定グラデーション_1231" data-name="名称未設定グラデーション 1231" cx="88.81" cy="27.71" fx="88.81" fy="27.71" r="23.56" gradientTransform="translate(56.32 -8.94) rotate(60)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".34" stop-color="#fff" stop-opacity=".99"/>
+      <stop offset=".48" stop-color="#fff" stop-opacity=".96"/>
+      <stop offset=".58" stop-color="#fff" stop-opacity=".92"/>
+      <stop offset=".66" stop-color="#fff" stop-opacity=".85"/>
+      <stop offset=".73" stop-color="#fff" stop-opacity=".76"/>
+      <stop offset=".79" stop-color="#fff" stop-opacity=".65"/>
+      <stop offset=".85" stop-color="#fff" stop-opacity=".52"/>
+      <stop offset=".9" stop-color="#fff" stop-opacity=".37"/>
+      <stop offset=".95" stop-color="#fff" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#fff" stop-opacity=".01"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g id="_レイヤー_10" data-name="レイヤー 10">
+    <polygon class="cls-2" points="75.33 0 0 130.47 150.65 130.47 75.33 0"/>
+    <polygon class="cls-1" points="103.45 66.86 47.21 66.86 75.33 115.57 103.45 66.86"/>
+  </g>
+</svg>

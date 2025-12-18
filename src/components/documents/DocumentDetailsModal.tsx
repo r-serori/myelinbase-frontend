@@ -1,9 +1,28 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
-import { useDocumentStatus, useUpdateDocumentTags } from "@/hooks/useDocuments";
-import { Plus, RotateCcw, SendHorizonal } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  useDocumentStatus,
+  useUpdateDocumentTags,
+  useGetDocumentDownloadUrl,
+} from "@/hooks/useDocuments";
+import {
+  Plus,
+  X,
+  AlertTriangle,
+  FileDown,
+  Info,
+  SendHorizonal,
+} from "lucide-react";
 import Spinner from "../ui/Spinner";
 import { useToast } from "../ui/ToastProvider";
+import dayjs from "dayjs";
+import { UpdateTagsRequestSchema } from "@/lib/schemas/document";
+import { Button } from "../ui/Button";
+import StatusChip from "./StatusChip";
+import TagChip from "./TagChip";
+import { Text } from "../ui/Text";
+import Input from "../ui/Input";
+import { Modal } from "../ui/Modal";
 
 export default function DocumentDetailsModal({
   documentId,
@@ -17,56 +36,23 @@ export default function DocumentDetailsModal({
   const { data, isLoading, isFetching, refetch } =
     useDocumentStatus(documentId);
   const updateTags = useUpdateDocumentTags();
+  const getDownloadUrl = useGetDocumentDownloadUrl();
   const doc = data?.document;
+
+  // タグリストの管理
   const [editTags, setEditTags] = useState<string[]>([]);
+  // 新しいタグ入力の管理（DOM直接参照をやめ、State管理に変更）
+  const [inputValue, setInputValue] = useState("");
+
   const { showToast } = useToast();
 
   const statusUpdating = isLoading || isFetching;
+  const MAX_TAGS_COUNT = 20;
+  const isOverLimit = editTags.length > MAX_TAGS_COUNT;
 
   useEffect(() => {
     setEditTags(Array.isArray(doc?.tags) ? doc!.tags : []);
   }, [doc?.tags]);
-
-  const statusInfo = useMemo(() => {
-    const code = doc?.status;
-    if (code === "COMPLETED") {
-      return {
-        label: "完了",
-        className: "bg-green-100 text-green-700",
-        description:
-          "インデックス作成が完了し、このファイルは検索に利用できます。",
-      };
-    }
-    if (code === "PROCESSING") {
-      return {
-        label: "処理中",
-        className: "bg-yellow-100 text-yellow-700",
-        description:
-          "インデックスを作成中です。完了すると検索に利用できるようになります。",
-      };
-    }
-    if (code === "PENDING") {
-      return {
-        label: "待機中",
-        className: "bg-gray-100 text-gray-700",
-        description:
-          "キューに登録されています。しばらくすると処理が開始されます。",
-      };
-    }
-    if (code === "ERROR") {
-      return {
-        label: "エラー",
-        className: "bg-red-100 text-red-700",
-        description:
-          "処理に失敗しました。もう一度アップロードするか、管理者にお問い合わせください。",
-      };
-    }
-    return {
-      label: code ?? "不明",
-      className: "bg-gray-100 text-gray-700",
-      description: "",
-    };
-  }, [doc?.status]);
 
   function toggleTag(tag: string) {
     setEditTags((prev) =>
@@ -74,17 +60,33 @@ export default function DocumentDetailsModal({
     );
   }
 
+  // タグを追加する処理（共通化）
+  function handleAddTag() {
+    const v = inputValue.trim();
+    if (v && !editTags.includes(v)) {
+      setEditTags((p) => [...p, v]);
+      setInputValue(""); // 追加後にリセット
+    }
+  }
+
   async function onSave() {
     if (!doc) return;
-    if (editTags.length === 0) {
-      alert("タグを1つ以上設定してください。");
+
+    const result = UpdateTagsRequestSchema.safeParse({ tags: editTags });
+
+    if (!result.success) {
+      const firstError = result.error.issues[0];
+      showToast({
+        type: "error",
+        message: firstError.message || "タグの設定が不正です。",
+      });
       return;
     }
+
     try {
       await updateTags.mutateAsync({
         documentId: doc.documentId,
         tags: editTags,
-        source: "USER",
       });
       await refetch();
       showToast({
@@ -98,180 +100,238 @@ export default function DocumentDetailsModal({
       });
     }
   }
+  async function onOpenPreview() {
+    if (!doc) return;
+    try {
+      const { downloadUrl } = await getDownloadUrl.mutateAsync(doc.documentId);
+      window.open(downloadUrl, "_blank", "noopener,noreferrer");
+    } catch (e) {
+      showToast({
+        type: "error",
+        message: "プレビュー用URLの取得に失敗しました。",
+      });
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-lg rounded shadow-lg p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">ファイル詳細</h2>
-          <button
-            className="text-xs border rounded px-2 py-1"
-            onClick={onClose}
-          >
-            閉じる
-          </button>
-        </div>
-        <div className="mt-3 text-sm">
-          {isLoading && <div className="text-gray-500">Loading...</div>}
-          {!isLoading && doc && (
-            <div className="space-y-2">
-              <div>
-                <span className="text-gray-500">ファイル名: </span>
-                <span>{doc.fileName}</span>
+    <Modal isOpen={true} title="ファイル詳細" size="2xl" onClose={onClose}>
+      <div className="text-sm">
+        {isLoading && (
+          <div className="flex justify-center items-center py-12 text-gray-500 gap-2">
+            <Spinner size="4" />
+            <Text variant="sm" color="default" weight="medium">
+              データを読み込んでいます...
+            </Text>
+          </div>
+        )}
+
+        {!isLoading && doc && (
+          <div>
+            {/* 基本情報セクション */}
+            <div className="grid grid-cols-[100px_1fr] gap-y-4 items-start space-y-2">
+              {/* ファイル名 */}
+              <Text variant="md" color="muted" weight="medium" className="py-1">
+                ファイル名
+              </Text>
+              <Text
+                variant="md"
+                color="default"
+                weight="medium"
+                className="break-all py-1"
+              >
+                {doc.fileName}
+              </Text>
+
+              {/* ステータス */}
+              <Text variant="md" color="muted" weight="medium" className="py-1">
+                ステータス
+              </Text>
+              <div className="flex items-center gap-2">
+                <StatusChip status={doc.status} className="pt-1" />
+                <Text variant="sm" color="muted" weight="medium">
+                  {(doc.status === "PROCESSING" ||
+                    doc.status === "PENDING_UPLOAD") &&
+                    "ステータスが「完了」になると、チャットで参照可能なファイルになります。"}
+                </Text>
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-500">ステータス: </span>
-                  <span
-                    className={`inline-block rounded px-2 py-0.5 text-xs ${statusInfo.className}`}
-                    title={
-                      doc?.status
-                        ? `処理状態: ${statusInfo.label} (${doc.status})`
-                        : undefined
-                    }
+
+              {/* 作成日時 */}
+              <Text variant="md" color="muted" weight="medium">
+                作成日時
+              </Text>
+              <Text
+                variant="sm"
+                color="default"
+                weight="medium"
+                className="pt-0.5"
+              >
+                {dayjs(doc.createdAt).format("YYYY/MM/DD HH:mm")}
+              </Text>
+            </div>
+
+            {/* タグ編集セクション */}
+            <div className="py-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <Text
+                  variant="md"
+                  color="default"
+                  weight="semibold"
+                  className="flex items-center gap-2"
+                >
+                  タグ設定
+                  <Text
+                    variant="xs"
+                    color="muted"
+                    weight="normal"
+                    className="bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100"
+                    as="span"
                   >
-                    {statusInfo.label}
-                  </span>
-                  <button
-                    className="text-[11px] border rounded px-2 py-0.5 flex items-center gap-1 cursor-pointer hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-100"
-                    onClick={async () => {
-                      const result = await refetch();
-                      if (result.error) {
-                        showToast({
-                          type: "error",
-                          message:
-                            "ステータスの取得に失敗しました。時間をおいて再度お試しください。",
-                        });
-                      } else {
-                        showToast({
-                          type: "success",
-                          message: "ステータスを最新の情報に更新しました。",
-                        });
-                      }
-                    }}
-                    disabled={statusUpdating}
-                  >
-                    {statusUpdating ? (
-                      <Spinner size="3" />
-                    ) : (
-                      <RotateCcw className={`w-3 h-3 text-gray-900`} />
-                    )}
-                    {statusUpdating ? "更新中..." : "ステータスを更新"}
-                  </button>
-                </div>
-                {showGuide && statusInfo.description && (
-                  <p className="mt-1 text-[11px] text-gray-500">
-                    {statusInfo.description}
-                  </p>
-                )}
+                    {editTags.length}個
+                  </Text>
+                </Text>
               </div>
-              <div>
-                <span className="text-gray-500">作成日時: </span>
-                <span>{new Date(doc.createdAt).toLocaleString()}</span>
-              </div>
-              {/* {doc.s3Path && (
+
+              <div className="bg-gray-50/50 rounded-lg border border-gray-200 p-4 space-y-4">
+                {/* 設定済みタグ一覧 */}
                 <div>
-                  <span className="text-gray-500">s3Path: </span>
-                  <span className="font-mono break-all">{doc.s3Path}</span>
-                  <button
-                    className="ml-2 text-xs border rounded px-2 py-0.5"
-                    onClick={() => navigator.clipboard.writeText(doc.s3Path!)}
-                  >
-                    Copy
-                  </button>
+                  {editTags.length === 0 ? (
+                    <Text
+                      variant="sm"
+                      color="muted"
+                      weight="medium"
+                      className="flex items-center gap-1"
+                    >
+                      <Info className="size-3" />
+                      タグはまだ設定されていません
+                    </Text>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {editTags.map((t) => (
+                        <TagChip
+                          key={t}
+                          tag={t}
+                          isDeleted={true}
+                          onClick={toggleTag}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )} */}
-              <div>
-                <div className="text-gray-500">タグ:</div>
-                {showGuide && (
-                  <p className="mt-1 text-[11px] text-gray-500">
-                    一覧や検索で使用されるタグです。クリックすると除外できます。
-                  </p>
-                )}
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {editTags.map((t) => (
-                    <button
-                      key={t}
-                      className="inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-700 px-2 py-0.5 text-xs"
-                      onClick={() => toggleTag(t)}
-                      title="クリックで除外"
-                    >
-                      {t}
-                      <span className="ml-1 rounded bg-blue-200 text-blue-800 px-1 text-[10px]">
-                        ×
-                      </span>
-                    </button>
-                  ))}
-                  <div className="flex flex-nowrap gap-1">
-                    <input
-                      id="newTagInput"
-                      className="text-xs border rounded px-2 py-0.5"
-                      placeholder="新規タグを入力してEnter"
-                      onKeyDown={(e) => {
-                        const target = e.target as HTMLInputElement;
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          const v = target.value.trim();
-                          if (v && !editTags.includes(v)) {
-                            setEditTags((p) => [...p, v]);
+
+                {/* 入力フォーム */}
+                <div className="space-y-3">
+                  {isOverLimit && (
+                    <div className="flex items-center gap-2 text-amber-700 bg-amber-50 p-2.5 rounded-md border border-amber-200">
+                      <AlertTriangle className="size-4 shrink-0" />
+                      <Text variant="sm" color="muted" weight="medium">
+                        タグの上限（{MAX_TAGS_COUNT}個）を超えています。
+                        更新するにはタグを減らしてください。
+                      </Text>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
+                    <div className="flex gap-2 w-full sm:max-w-xs">
+                      <Input
+                        id="documentDetailsModalTagsInput"
+                        size="sm"
+                        value={inputValue}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setInputValue(e.target.value)
+                        }
+                        placeholder="新しいタグを入力..."
+                        className={`${isOverLimit && "border-warning"}`}
+                        onKeyDown={(
+                          e: React.KeyboardEvent<HTMLInputElement>
+                        ) => {
+                          if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                            e.preventDefault();
+                            handleAddTag();
                           }
-                          target.value = "";
+                        }}
+                        disabled={isOverLimit || updateTags.isPending}
+                        autoComplete="off"
+                      />
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        onClick={handleAddTag}
+                        disabled={
+                          isOverLimit ||
+                          updateTags.isPending ||
+                          !inputValue.trim()
                         }
-                      }}
-                    />
-                    <button
-                      id="addNewTagButton"
-                      type="button"
-                      className="text-[11px] border rounded px-1 py-0.5 flex items-center cursor-pointer hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-100"
-                      onClick={() => {
-                        const el = document.getElementById(
-                          "newTagInput"
-                        ) as HTMLInputElement | null;
-                        if (!el) return;
-                        const v = el.value.trim();
-                        if (v && !editTags.includes(v)) {
-                          setEditTags((p) => [...p, v]);
-                        }
-                        el.value = "";
-                      }}
+                      >
+                        <Plus className="size-3.5" />
+                        追加
+                      </Button>
+                    </div>
+
+                    <Button
+                      variant="default"
+                      size="xs"
+                      onClick={onSave}
+                      disabled={
+                        updateTags.isPending ||
+                        isOverLimit ||
+                        editTags.length === 0
+                      }
                     >
-                      <Plus className="w-3 h-3 text-gray-900" />
-                      追加
-                    </button>
+                      {updateTags.isPending ? (
+                        <Spinner size="3" />
+                      ) : (
+                        <SendHorizonal className="size-3" />
+                      )}
+                      <Text variant="sm" color="white">
+                        タグを保存
+                      </Text>
+                    </Button>
                   </div>
                 </div>
               </div>
-              <div className="pt-2">
-                <button
-                  className="text-xs border rounded px-2 py-1 flex items-center gap-1 cursor-pointer hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-100"
-                  onClick={onSave}
-                  disabled={updateTags.isPending}
+            </div>
+
+            {/* フッターアクション（プレビュー） */}
+            {doc.status === "COMPLETED" ? (
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="xs"
+                  onClick={onOpenPreview}
+                  disabled={getDownloadUrl.isPending}
                 >
-                  {updateTags.isPending ? (
+                  {getDownloadUrl.isPending ? (
                     <Spinner size="3" />
                   ) : (
-                    <>
-                      <SendHorizonal className="w-3 h-3 text-gray-900" />
-                    </>
+                    <FileDown className="size-3" />
                   )}
-                  タグを更新
-                </button>
-                {showGuide && (
-                  <p className="mt-1 text-[11px] text-gray-500">
-                    ※「タグを更新」を押すと、この画面で設定したタグが一覧と検索条件に反映されます。
-                  </p>
-                )}
+                  <Text variant="sm" color="default">
+                    ファイルを開く（プレビュー/ダウンロード）
+                  </Text>
+                </Button>
               </div>
-              <div className="text-xs text-gray-500">
-                プレビューはS3の署名付きURLが必要です（将来対応）。
-              </div>
-            </div>
-          )}
-          {!isLoading && !doc && (
-            <div className="text-gray-500">ドキュメントが見つかりません。</div>
-          )}
-        </div>
+            ) : (
+              <Text
+                variant="sm"
+                color="muted"
+                weight="medium"
+                className="text-center"
+              >
+                ※ 処理が完了するまでプレビュー機能は利用できません
+              </Text>
+            )}
+          </div>
+        )}
+
+        {!isLoading && !doc && (
+          <div className="flex flex-col items-center  py-12">
+            <AlertTriangle className="size-8 mb-2 text-warning" />
+            <Text variant="lg" color="warning" weight="medium">
+              ドキュメントが見つかりませんでした。
+            </Text>
+          </div>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 }

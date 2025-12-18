@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AmplifyProvider from "@/components/auth/AmplifyProvider";
-import { QueryProvider } from "@/components/providers/QueryProvider";
-import Header from "@/components/layout/Header";
-import { ToastProvider } from "@/components/ui/ToastProvider";
+import { QueryProvider } from "../providers/QueryProvider";
+import Header from "@/components/ui/Header";
+import { ToastProvider } from "../components/ui/ToastProvider";
+import { AuthProvider } from "../contexts/AuthContext";
+import { ChatGenerationProvider } from "@/contexts/ChatGenerationContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,15 +29,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
+    <html lang="ja" className="h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full overflow-hidden flex flex-col`}
       >
         <AmplifyProvider>
           <QueryProvider>
             <ToastProvider>
-              <Header />
-              {children}
+              <AuthProvider>
+                <ChatGenerationProvider>
+                  <Header />
+                  <main className="flex-1 h-full overflow-hidden relative">
+                    {children}
+                  </main>
+                </ChatGenerationProvider>
+              </AuthProvider>
             </ToastProvider>
           </QueryProvider>
         </AmplifyProvider>

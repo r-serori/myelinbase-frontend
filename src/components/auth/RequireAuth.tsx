@@ -1,26 +1,29 @@
-'use client';
-import { getCurrentUser } from 'aws-amplify/auth';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../contexts/AuthContext"; // 作成したContext
+import Loading from "../ui/Loading";
 
-export default function RequireAuth({ children }: { children: React.ReactNode }) {
+export default function RequireAuth({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
-  const [ok, setOk] = useState(false);
+  const { user, isLoading } = useAuth();
+
   useEffect(() => {
-    (async () => {
-      try {
-        if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
-          setOk(true);
-          return;
-        }
-        await getCurrentUser();
-        setOk(true);
-      } catch {
-        router.replace('/login');
-      }
-    })();
-  }, [router]);
-  return ok ? <>{children}</> : null;
+    if (!isLoading && !user) {
+      router.replace("/login");
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading)
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+
+  return user ? <>{children}</> : null;
 }
-
-
