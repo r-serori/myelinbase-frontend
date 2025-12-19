@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* 評価アイコン用の軽いバウンスアニメーション */
+.icon-bounce-up {
+  animation: icon-bounce-up 0.3s ease-out;
+}
+
+.icon-bounce-down {
+  animation: icon-bounce-down 0.3s ease-out;
+}
+
+@keyframes icon-bounce-up {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(-4px) scale(1.05);
+  }
+  50% {
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    transform: translateY(-4px) scale(1.05);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes icon-bounce-down {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(4px) scale(1.05);
+  }
+  50% {
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    transform: translateY(4px) scale(1.05);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ToolTipButton クリック時の一瞬の青いフラッシュアニメーション */
+.tooltip-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.tooltip-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(37, 99, 235, 0.18); /* blue-600 相当の薄い青 */
+  transform: translateY(100%);
+  pointer-events: none;
+}
+
+@keyframes tooltip-button-flash {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+.tooltip-button-clicked::before {
+  animation: tooltip-button-flash 0.22s ease-out;
+}
+
+.tooltip-icon {
+  transition: color 0.15s ease-out, transform 0.15s ease-out;
+}
+
+.tooltip-icon-clicked {
+  color: #2563eb !important; /* text-blue-600 */
+  transform: translateY(-1px) scale(1.05);
+}
+
