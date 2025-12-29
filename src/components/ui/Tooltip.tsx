@@ -1,19 +1,16 @@
-import { cn } from "@/lib/utils";
-import { CircleQuestionMark } from "lucide-react";
 import { useState } from "react";
-import Alert from "./Alert";
-import type { AlertColor } from "./Alert";
+import { CircleQuestionMark } from "lucide-react";
+
+import { cn } from "@/lib/utils";
 
 function Tooltip({
   children,
   circleSize = 6,
   position,
-  color = "default",
 }: {
   children: React.ReactNode;
   circleSize?: number;
   position: string;
-  color?: AlertColor;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
 

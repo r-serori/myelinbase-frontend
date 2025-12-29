@@ -1,17 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { signIn } from "aws-amplify/auth";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { AuthLayout } from "@/components/auth/AuthLayout";
-import { loginSchema } from "@/lib/auth-schemas";
-import { ZodError } from "zod";
+
+import AuthLayout from "@/features/auth/components/AuthLayout";
+import { loginSchema } from "@/features/auth/types/index";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { handleCommonError } from "@/lib/error-handler";
+
+import { useToast } from "@/providers/ToastProvider";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,30 +28,24 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Validation
       loginSchema.parse({ email, password });
 
       if (process.env.NEXT_PUBLIC_LOGIN_SKIP === "true") {
-        // Mock login handling if needed, though usually AuthContext handles the state
       } else {
         await signIn({ username: email, password });
       }
 
       router.push("/chat");
-    } catch (err: any) {
-      if (err instanceof ZodError) {
-        // ZodErrorの型定義によってはerrorsプロパティへのアクセスでエラーが出ることがあるためas any等で回避、またはissuesを使用
-        setError(err.issues[0]?.message ?? "入力内容を確認してください");
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "UserNotFoundException") {
+        setError("ユーザーが見つかりません");
+      } else if (
+        err instanceof Error &&
+        err.name === "NotAuthorizedException"
+      ) {
+        setError("メールアドレスまたはパスワードが正しくありません");
       } else {
-        console.error(err);
-        // Amplifyのエラーメッセージをユーザーフレンドリーにする処理を入れると良い
-        if (err.name === "UserNotFoundException") {
-          setError("ユーザーが見つかりません");
-        } else if (err.name === "NotAuthorizedException") {
-          setError("メールアドレスまたはパスワードが正しくありません");
-        } else {
-          setError(err.message || "ログインに失敗しました");
-        }
+        handleCommonError(err, setError, showToast, "ログインに失敗しました");
       }
     } finally {
       setLoading(false);

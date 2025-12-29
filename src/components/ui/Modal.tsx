@@ -1,12 +1,22 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { CircleQuestionMark, X } from "lucide-react";
+import { X } from "lucide-react";
+
 import { cn } from "@/lib/utils";
+
 import { Button } from "./Button";
 import { Text } from "./Text";
-import Tooltip from "./ToolTip";
+import Tooltip from "./Tooltip";
+
+function useIsMounted() {
+  return useSyncExternalStore(
+    () => () => {}, // subscribe（何もしない）
+    () => true, // getSnapshot（クライアント）
+    () => false // getServerSnapshot（サーバー）
+  );
+}
 
 interface ModalProps {
   isOpen: boolean;
@@ -30,10 +40,9 @@ export function Modal({
   children,
   onClose,
 }: ModalProps) {
-  const [mounted, setMounted] = useState(false);
+  const isMounted = useIsMounted();
 
   useEffect(() => {
-    setMounted(true);
     if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -44,7 +53,7 @@ export function Modal({
     };
   }, [isOpen]);
 
-  if (!mounted || !isOpen) return null;
+  if (!isMounted || !isOpen) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200">
@@ -79,9 +88,6 @@ export function Modal({
   );
 }
 
-/**
- * モーダルのヘッダー部分（タイトル + 閉じるボタン）
- */
 export function ModalHeader({
   title,
   tooltipContent,
@@ -119,9 +125,6 @@ export function ModalHeader({
   );
 }
 
-/**
- * モーダルのコンテンツ部分（スクロール可能）
- */
 export function ModalBody({
   children,
   className,
@@ -136,9 +139,6 @@ export function ModalBody({
   );
 }
 
-/**
- * モーダルのフッター部分（アクションボタン等）
- */
 export function ModalFooter({
   children,
   className,

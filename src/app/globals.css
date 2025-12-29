@@ -172,7 +172,9 @@ body {
 }
 
 .tooltip-icon {
-  transition: color 0.15s ease-out, transform 0.15s ease-out;
+  transition:
+    color 0.15s ease-out,
+    transform 0.15s ease-out;
 }
 
 .tooltip-icon-clicked {

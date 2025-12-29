@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import AmplifyProvider from "@/components/auth/AmplifyProvider";
-import { QueryProvider } from "../providers/QueryProvider";
+
+import AmplifyProvider from "@/features/auth/providers/AmplifyProvider";
+import { AuthProvider } from "@/features/auth/providers/AuthProvider";
 import Header from "@/components/ui/Header";
-import { ToastProvider } from "../components/ui/ToastProvider";
-import { AuthProvider } from "../contexts/AuthContext";
-import { ChatGenerationProvider } from "@/contexts/ChatGenerationContext";
+
+import "./globals.css";
+
+import { MSWProvider } from "@/providers/MSWProvider";
+import { QueryProvider } from "@/providers/QueryProvider";
+import { ToastProvider } from "@/providers/ToastProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,20 +36,20 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full overflow-hidden flex flex-col`}
       >
-        <AmplifyProvider>
-          <QueryProvider>
-            <ToastProvider>
-              <AuthProvider>
-                <ChatGenerationProvider>
+        <MSWProvider>
+          <AmplifyProvider>
+            <QueryProvider>
+              <ToastProvider>
+                <AuthProvider>
                   <Header />
                   <main className="flex-1 h-full overflow-hidden relative">
                     {children}
                   </main>
-                </ChatGenerationProvider>
-              </AuthProvider>
-            </ToastProvider>
-          </QueryProvider>
-        </AmplifyProvider>
+                </AuthProvider>
+              </ToastProvider>
+            </QueryProvider>
+          </AmplifyProvider>
+        </MSWProvider>
       </body>
     </html>
   );

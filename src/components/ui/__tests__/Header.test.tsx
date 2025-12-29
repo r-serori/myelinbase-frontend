@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import Header from "../Header";
-import { vi } from "vitest";
 
 // モック
 const mocks = vi.hoisted(() => {
@@ -15,7 +16,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-vi.mock("@/contexts/AuthContext", () => ({
+vi.mock("@/features/auth/providers/AuthProvider", () => ({
   useAuth: mocks.useAuth,
 }));
 

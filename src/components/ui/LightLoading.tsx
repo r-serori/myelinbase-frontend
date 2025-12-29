@@ -1,9 +1,11 @@
+import Image from "next/image";
+
 import { Text } from "./Text";
 
 export default function LightLoading({ isLoading }: { isLoading: boolean }) {
   return (
     <div className="flex items-center gap-2">
-      <img
+      <Image
         src="/images/icon.png"
         alt="Myelin Base Logo"
         width={32}

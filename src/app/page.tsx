@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Orbitron } from "next/font/google"; // ★ 追加: フォントのインポート
 import { useRouter } from "next/navigation";
-import { Button } from "../components/ui/Button";
 import { ArrowRight, MousePointerClick, ShieldCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
-import ThreeTitleLogo from "../components/ui/ThreeTitleLogo";
 
+import { cn } from "@/lib/utils";
+
+import { Button } from "../components/ui/Button";
+import { Text } from "../components/ui/Text";
 // 型定義だけは通常通りインポートしてOK
 import type { IntroPhase } from "../components/ui/ThreeTitleLogo";
-import { Text } from "../components/ui/Text";
-import { Orbitron } from "next/font/google"; // ★ 追加: フォントのインポート
+import ThreeTitleLogo from "../components/ui/ThreeTitleLogo";
 
 // ★ 追加: フォントの設定
 const titleFont = Orbitron({

@@ -1,9 +1,11 @@
 "use client";
 
-import ThreeTitleLogo from "./ThreeTitleLogo";
 import { ShieldCheck } from "lucide-react";
-import { Text } from "./Text";
+
 import { cn } from "@/lib/utils";
+
+import { Text } from "./Text";
+import ThreeTitleLogo from "./ThreeTitleLogo";
 
 export default function Loading() {
   return (

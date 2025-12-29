@@ -1,29 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import RequireAuth from "@/components/auth/RequireAuth";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { updateProfileSchema, changePasswordSchema } from "@/lib/auth-schemas";
+import { useEffect, useState } from "react";
 import {
-  updateUserAttributes,
-  updatePassword,
   fetchUserAttributes,
+  updatePassword,
+  updateUserAttributes,
 } from "aws-amplify/auth";
 import {
-  User as UserIcon,
+  ChevronDown,
+  ChevronUp,
   Lock,
   LogOut,
   Mail,
-  ChevronDown,
-  ChevronUp,
   Pencil,
+  User as UserIcon,
 } from "lucide-react";
-import { Text } from "../../components/ui/Text";
-import { Modal } from "../../components/ui/Modal";
-import { useToast } from "../../components/ui/ToastProvider";
+
+import RequireAuth from "@/features/auth/components/RequireAuth";
+import { useAuth } from "@/features/auth/providers/AuthProvider";
+import {
+  changePasswordSchema,
+  updateProfileSchema,
+} from "@/features/auth/types/index";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { handleCommonError } from "@/lib/error-handler";
+
 import Alert from "../../components/ui/Alert";
+import { Modal } from "../../components/ui/Modal";
+import { Text } from "../../components/ui/Text";
+import { useToast } from "../../providers/ToastProvider";
 
 export default function ProfilePage() {
   return (
@@ -38,19 +44,15 @@ function ProfileContent() {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  // Profile State
-  const [nickname, setNickname] = useState(user?.nickname || ""); // 表示用
+  const [nickname, setNickname] = useState(user?.nickname || "");
   const [email, setEmail] = useState(user?.email || "");
 
-  // Editing State
   const [isEditingNickname, setIsEditingNickname] = useState(false);
-  const [formNickname, setFormNickname] = useState(""); // 編集用
+  const [formNickname, setFormNickname] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  // Modal State
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-  // Validation Messages (Alert表示用)
   const [profileValidateMessage, setProfileValidateMessage] = useState<
     string | null
   >(null);
@@ -58,7 +60,6 @@ function ProfileContent() {
     string | null
   >(null);
 
-  // Password Form State
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -81,14 +82,16 @@ function ProfileContent() {
           setNickname(user.nickname);
           setFormNickname(user.nickname);
         }
-      } catch (e) {
-        console.error(e);
+      } catch {
+        showToast({
+          type: "error",
+          message: "プロフィール情報の取得に失敗しました",
+        });
       }
     }
     loadAttributes();
   }, [user]);
 
-  // 編集開始時にフォームの値を現在の値にリセット
   const startEditingNickname = () => {
     setFormNickname(nickname);
     setIsEditingNickname(true);
@@ -107,38 +110,25 @@ function ProfileContent() {
     setLoading(true);
 
     try {
-      // safeParseを使用してバリデーション結果を判定
-      // updateProfileSchema は { nickname: string } を期待している
-      const result = updateProfileSchema.safeParse({ nickname: formNickname });
-
-      if (!result.success) {
-        // バリデーションエラーはAlertで表示
-        setProfileValidateMessage(
-          result.error.issues[0]?.message ?? "入力エラー"
-        );
-        setLoading(false);
-        return;
-      }
+      updateProfileSchema.parse({ nickname: formNickname });
 
       await updateUserAttributes({
         userAttributes: {
-          nickname: result.data.nickname,
+          nickname: formNickname,
         },
       });
 
-      // 成功したら表示用ステートを更新して編集モード終了
       setNickname(formNickname);
       setIsEditingNickname(false);
 
-      // API成功メッセージはToastで表示
       showToast({ type: "success", message: "プロフィール情報を更新しました" });
-    } catch (err: any) {
-      console.error(err);
-      // APIエラーはToastで表示
-      showToast({
-        type: "error",
-        message: "プロフィールの更新に失敗しました",
-      });
+    } catch (err: unknown) {
+      handleCommonError(
+        err,
+        setProfileValidateMessage,
+        showToast,
+        "プロフィールの更新に失敗しました"
+      );
     } finally {
       setLoading(false);
     }
@@ -150,41 +140,29 @@ function ProfileContent() {
     setLoading(true);
 
     try {
-      // safeParseを使用してバリデーション結果を判定
-      const result = changePasswordSchema.safeParse({
+      changePasswordSchema.parse({
         oldPassword,
         newPassword,
         confirmNewPassword,
       });
-
-      if (!result.success) {
-        // バリデーションエラーはAlertで表示
-        setPasswordValidateMessage(
-          result.error.issues[0]?.message ?? "入力エラー"
-        );
-        setLoading(false);
-        return;
-      }
-
       await updatePassword({
-        oldPassword: result.data.oldPassword,
-        newPassword: result.data.newPassword,
+        oldPassword,
+        newPassword,
       });
 
-      // API成功メッセージはToastで表示
       showToast({ type: "success", message: "パスワードを変更しました" });
 
       setOldPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
       setIsChangingPassword(false);
-    } catch (err: any) {
-      console.error(err);
-      // APIエラーはToastで表示
-      showToast({
-        type: "error",
-        message: err.message || "パスワードの変更に失敗しました",
-      });
+    } catch (err: unknown) {
+      handleCommonError(
+        err,
+        setPasswordValidateMessage,
+        showToast,
+        "パスワードの変更に失敗しました"
+      );
     } finally {
       setLoading(false);
     }

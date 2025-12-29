@@ -1,32 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
-  signUp,
   confirmSignUp,
   resendSignUpCode,
   signIn,
+  signUp,
 } from "aws-amplify/auth";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { AuthLayout } from "@/components/auth/AuthLayout";
-import { registerSchema, confirmSignUpSchema } from "@/lib/auth-schemas";
-import { ZodError } from "zod";
+
+import AuthLayout from "@/features/auth/components/AuthLayout";
+import {
+  confirmSignUpSchema,
+  registerSchema,
+} from "@/features/auth/types/index";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { handleCommonError } from "@/lib/error-handler";
+
+import { useToast } from "@/providers/ToastProvider";
 
 type Step = "REGISTER" | "CONFIRM";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [step, setStep] = useState<Step>("REGISTER");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form State
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState(""); // nickname or preferred_username
+  const [username, setUsername] = useState("");
   const [code, setCode] = useState("");
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -35,7 +41,6 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Validation
       registerSchema.parse({ email, password, username });
 
       await signUp({
@@ -44,21 +49,19 @@ export default function RegisterPage() {
         options: {
           userAttributes: {
             email,
-            // Cognitoの設定に合わせてnicknameやpreferred_usernameなどにマッピング
-            // 標準的なOIDCプロファイルではnicknameが適切
             nickname: username,
           },
         },
       });
 
       setStep("CONFIRM");
-    } catch (err: any) {
-      if (err instanceof ZodError) {
-        setError(err.issues[0]?.message ?? "入力内容を確認してください");
-      } else {
-        console.error(err);
-        setError(err.message || "登録中にエラーが発生しました");
-      }
+    } catch (err: unknown) {
+      handleCommonError(
+        err,
+        setError,
+        showToast,
+        "登録中にエラーが発生しました"
+      );
     } finally {
       setLoading(false);
     }
@@ -77,16 +80,15 @@ export default function RegisterPage() {
         confirmationCode: code,
       });
 
-      // 自動ログイン
       await signIn({ username: email, password });
       router.push("/profile");
-    } catch (err: any) {
-      if (err instanceof ZodError) {
-        setError(err.issues[0]?.message ?? "入力内容を確認してください");
-      } else {
-        console.error(err);
-        setError(err.message || "確認コードの検証に失敗しました");
-      }
+    } catch (err: unknown) {
+      handleCommonError(
+        err,
+        setError,
+        showToast,
+        "確認コードの検証に失敗しました"
+      );
     } finally {
       setLoading(false);
     }
@@ -96,9 +98,14 @@ export default function RegisterPage() {
     setError(null);
     try {
       await resendSignUpCode({ username: email });
-      alert("確認コードを再送信しました");
-    } catch (err: any) {
-      setError(err.message || "コードの再送信に失敗しました");
+      showToast({ type: "success", message: "確認コードを再送信しました" });
+    } catch (err: unknown) {
+      handleCommonError(
+        err,
+        setError,
+        showToast,
+        "コードの再送信に失敗しました"
+      );
     }
   };
 

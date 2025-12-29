@@ -1,6 +1,7 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import { DropdownList, DropdownItem } from "../DropDownList";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
+import { DropdownItem, DropdownList } from "../DropDownList";
 
 describe("DropDownList", () => {
   it("renders container and children", () => {

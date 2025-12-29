@@ -1,25 +1,23 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useRef, useState } from "react";
 import {
   Center,
+  ContactShadows,
   Environment,
   Float,
   PerspectiveCamera,
-  ContactShadows,
   Trail,
 } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 const BARRIER_RADIUS = 3.8;
 
-// 型定義のエクスポート（page.tsxで使用）
 export type IntroPhase = "INIT" | "ATTACK" | "DEFEND" | "SHOW_TITLE";
 
 /**
  * 攻撃ビーム（単体）
- * 形状を「球体」に変更
  */
 function SingleBeam({
   isActive,
@@ -76,11 +74,8 @@ function SingleBeam({
       p.pos.sub(p.dir.clone().multiplyScalar(p.speed));
       meshRef.current.position.copy(p.pos);
 
-      // 球体なので回転制御は不要
-
-      // ★ここで実際の接触を判定している
       if (p.pos.length() <= BARRIER_RADIUS) {
-        onHit(); // ここで親(BeamManager)に通知
+        onHit();
         p.fired = false;
         meshRef.current.visible = false;
         params.current.startTime = 0;
@@ -104,7 +99,7 @@ function SingleBeam({
 function BeamManager({
   triggerCount,
   isIntroAttack,
-  onBeamHit, // ★ 追加: ヒット時のコールバックを受け取る
+  onBeamHit,
 }: {
   triggerCount: number;
   isIntroAttack: boolean;
@@ -152,7 +147,6 @@ function BeamManager({
       next[index] = { ...next[index], active: false };
       return next;
     });
-    // ★ 追加: SingleBeamから通知が来たら、さらに親(ThreeTitleLogo)へ通知する
     onBeamHit();
   };
 
@@ -271,7 +265,7 @@ function TetrahedronCore() {
 }
 
 /**
- * Main Component (デフォルトエクスポート)
+ * Main Component
  */
 export default function ThreeTitleLogo({
   phase,

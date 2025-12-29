@@ -1,19 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { resetPassword, confirmResetPassword } from "aws-amplify/auth";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { AuthLayout } from "@/components/auth/AuthLayout";
-import { forgotPasswordSchema, resetPasswordSchema } from "@/lib/auth-schemas";
+import { useRouter } from "next/navigation";
+import { confirmResetPassword, resetPassword } from "aws-amplify/auth";
 import { ZodError } from "zod";
+
+import AuthLayout from "@/features/auth/components/AuthLayout";
+import {
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from "@/features/auth/types/index";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { handleCommonError } from "@/lib/error-handler";
+
+import { useToast } from "@/providers/ToastProvider";
 
 type Step = "REQUEST" | "RESET";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
+  const { showToast } = useToast();
+
   const [step, setStep] = useState<Step>("REQUEST");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,12 +41,14 @@ export default function ForgotPasswordPage() {
       forgotPasswordSchema.parse({ email });
       await resetPassword({ username: email });
       setStep("RESET");
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof ZodError) {
         setError(err.issues[0]?.message ?? "入力内容を確認してください");
       } else {
         console.error(err);
-        setError(err.message || "リセットコードの送信に失敗しました");
+        setError(
+          (err as Error).message ?? "リセットコードの送信に失敗しました"
+        );
       }
     } finally {
       setLoading(false);
@@ -58,17 +69,19 @@ export default function ForgotPasswordPage() {
         newPassword,
       });
 
-      alert(
-        "パスワードを変更しました。新しいパスワードでログインしてください。"
-      );
+      showToast({
+        type: "success",
+        message:
+          "パスワードを変更しました。新しいパスワードでログインしてください。",
+      });
       router.push("/login");
-    } catch (err: any) {
-      if (err instanceof ZodError) {
-        setError(err.issues[0]?.message ?? "入力内容を確認してください");
-      } else {
-        console.error(err);
-        setError(err.message || "パスワードのリセットに失敗しました");
-      }
+    } catch (err: unknown) {
+      handleCommonError(
+        err,
+        setError,
+        showToast,
+        "パスワードのリセットに失敗しました"
+      );
     } finally {
       setLoading(false);
     }

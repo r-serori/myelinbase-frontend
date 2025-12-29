@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+
 import { cn } from "@/lib/utils";
 
 const inputVariants = cva(
@@ -7,7 +8,7 @@ const inputVariants = cva(
   {
     variants: {
       size: {
-        default: "h-9 px-3 py-1 text-sm", // text-sm を追加して視認性向上
+        default: "h-9 px-3 py-1 text-sm",
         xs: "h-7 px-1.5 py-0.5 text-[10px] md:w-40",
         sm: "h-7 px-2 w-60 text-xs",
         md: "h-7 px-2.5 w-80 text-sm",
@@ -24,7 +25,8 @@ const inputVariants = cva(
 );
 
 export interface InputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
     VariantProps<typeof inputVariants> {}
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(

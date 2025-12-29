@@ -1,20 +1,19 @@
 "use client";
-import RequireAuth from "@/components/auth/RequireAuth";
-import DocumentTable from "@/components/documents/DocumentTable";
-import { useDocuments } from "@/hooks/useDocuments";
-import { useQueryErrorToast } from "@/hooks/useQueryErrorToast";
 import { useState } from "react";
-import DocumentDetailsModal from "@/components/documents/DocumentDetailsModal";
-import DeleteConfirmDialog from "@/components/documents/DeleteConfirmDialog";
 import { Book, BookOpenText, Upload } from "lucide-react";
-import FileUploadModal from "@/components/documents/FileUploadModal";
-import { useToast } from "../../components/ui/ToastProvider";
-import { Button } from "../../components/ui/Button";
-import { Text } from "../../components/ui/Text";
-import { useDocumentFilters } from "@/hooks/useDocumentFilters";
-import DocumentSearchBar from "@/components/documents/DocumentSearchBar";
-import { useLocalDocuments } from "@/hooks/useLocalDocuments";
-import { useDocumentDeleteActions } from "@/hooks/useDocumentDeleteActions";
+
+import RequireAuth from "@/features/auth/components/RequireAuth";
+import DeleteConfirmDialog from "@/features/documents/components/DeleteConfirmDialog";
+import DocumentDetailsModal from "@/features/documents/components/DocumentDetailsModal";
+import DocumentSearchBar from "@/features/documents/components/DocumentSearchBar";
+import DocumentTable from "@/features/documents/components/DocumentTable";
+import FileUploadModal from "@/features/documents/components/FileUploadModal";
+import { useDocumentDeleteActions } from "@/features/documents/hooks/useDocumentDeleteActions";
+import { useDocumentFilters } from "@/features/documents/hooks/useDocumentFilters";
+import { useDocuments } from "@/features/documents/hooks/useDocuments";
+import { Button } from "@/components/ui/Button";
+import { Text } from "@/components/ui/Text";
+import { useQueryErrorToast } from "@/hooks/useQueryErrorToast";
 
 export default function DocumentsPage() {
   return (
@@ -33,11 +32,6 @@ function Main() {
   const { data, isLoading, refetch, isError, error } = useDocuments();
   useQueryErrorToast(isError, error);
 
-  // ローカル（モック）ドキュメントとのマージ
-  const { mergedDocuments, setLocalDocuments, useMocks } = useLocalDocuments(
-    data?.documents ?? []
-  );
-
   // フィルタリングロジック
   const {
     filters,
@@ -47,14 +41,14 @@ function Main() {
     tagSuggestions,
     actions: filterActions,
     hasConditions,
-  } = useDocumentFilters(mergedDocuments);
+  } = useDocumentFilters(data?.documents ?? []);
 
   // 削除アクションロジック
   const { state: deleteState, actions: deleteActions } =
     useDocumentDeleteActions(refetch);
 
   // 削除対象のドキュメント取得（確認ダイアログ用）
-  const targetDocument = mergedDocuments.find(
+  const targetDocument = (data?.documents ?? []).find(
     (d) => d.documentId === deleteState.confirmTargetId
   );
 
@@ -158,18 +152,12 @@ function Main() {
             refetch={refetch}
             showGuide={showGuide}
             allTags={allTags}
-            onAppendDocuments={
-              useMocks
-                ? (docs) => setLocalDocuments((prev) => [...docs, ...prev])
-                : undefined
-            }
           />
         )}
 
         {detailId && (
           <DocumentDetailsModal
             documentId={detailId}
-            showGuide={showGuide}
             onClose={() => setDetailId(null)}
           />
         )}

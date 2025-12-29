@@ -1,13 +1,12 @@
 "use client";
-import RequireAuth from "@/components/auth/RequireAuth";
-import ChatWindow from "@/components/chat/ChatWindow";
-// useSessions はサイドバー用には必要ですが、ここでのリダイレクト判定には使いません
-import { useSessions } from "@/hooks/useSessions";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import SessionSideBar from "@/components/chat/SessionSideBar";
-import DocumentPreviewSidebar from "@/components/chat/DocumentPreviewSidebar";
-import { SourceDocument } from "@/lib/schemas/chat";
+
+import RequireAuth from "@/features/auth/components/RequireAuth";
+import ChatContent from "@/features/chat/components/ChatContent";
+import DocumentPreviewSidebar from "@/features/chat/components/DocumentPreviewSidebar";
+import SessionSideBar from "@/features/chat/components/SessionSideBar";
+import { SourceDocument } from "@/lib/api/generated/model";
 
 export default function ChatPage() {
   return (
@@ -44,7 +43,12 @@ function Main() {
           sidebarCollapsed ? "ml-16" : "md:ml-56"
         } ${activeDocument ? "mr-0 md:mr-[600px]" : ""}`}
       >
-        <ChatWindow
+        {/* 
+          ChatWindowを廃止し、直接ChatContentを使用
+          状態管理はZustandで行い、セッション切り替え時のリセットも
+          ChatContent内部で制御する
+        */}
+        <ChatContent
           sessionId={currentSessionId}
           isDocumentPreviewOpen={!!activeDocument}
           sidebarCollapsed={sidebarCollapsed}
@@ -52,7 +56,6 @@ function Main() {
         />
       </section>
 
-      {/* 右サイドバー (ドキュメントプレビュー) */}
       <aside
         className={`fixed top-12 right-0 bottom-0 w-full rounded-xs lg:w-[600px] bg-secondary border border-primary/20 z-60 transform transition-transform duration-300 ease-in-out ${
           activeDocument ? "translate-x-0" : "translate-x-full"

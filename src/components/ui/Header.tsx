@@ -1,10 +1,10 @@
 "use client";
-import { Bot, Folder, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "../../contexts/AuthContext";
-import { Text } from "./Text";
-import { Button } from "./Button";
+import { Bot, Folder, User as UserIcon } from "lucide-react";
+
+import { useAuth } from "@/features/auth/providers/AuthProvider";
+import { Button } from "@/components/ui/Button";
 
 export default function Header() {
   const pathname = usePathname();
@@ -15,14 +15,11 @@ export default function Header() {
   const isRegisterPage = pathname === "/register";
   const isForgotPasswordPage = pathname === "/forgot-password";
 
-  // 認証関連ページではヘッダーを表示しない（または簡易表示にする）
   if (isTitlePage || isLoginPage || isRegisterPage || isForgotPasswordPage)
     return null;
 
-  // ローディング中は何も表示しない、またはスケルトンを表示
   if (isLoading) return null;
 
-  // ログインしていない場合は表示しない（RequireAuthで弾かれるはずだが念のため）
   if (!user) return null;
 
   const isActive = (href: string) =>

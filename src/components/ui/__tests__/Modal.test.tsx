@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { Modal, ModalFooter } from "../Modal";
 
 // Tooltipをモック化

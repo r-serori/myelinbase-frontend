@@ -1,5 +1,6 @@
+import { describe, expect, it } from "vitest";
+
 import { cn, parseTags } from "../utils";
-import { describe, it, expect } from "vitest";
 
 describe("utils", () => {
   describe("cn", () => {
