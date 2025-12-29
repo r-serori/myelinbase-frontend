@@ -6,10 +6,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type TextEndChunkType =
-  (typeof TextEndChunkType)[keyof typeof TextEndChunkType];
+export type DataChunkType = (typeof DataChunkType)[keyof typeof DataChunkType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const TextEndChunkType = {
-  "text-end": "text-end",
+export const DataChunkType = {
+  data: "data",
 } as const;

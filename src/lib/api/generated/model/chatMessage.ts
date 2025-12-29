@@ -15,7 +15,6 @@ export interface ChatMessage {
   aiResponse: string;
   sourceDocuments: SourceDocument[];
   feedback: FeedbackType;
-  feedbackComment?: string;
   createdAt: string;
   updatedAt?: string;
 }

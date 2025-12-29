@@ -4,6 +4,7 @@ import { SessionInfoPayload, SourceDocument } from "@/lib/api/generated/model";
 
 // =================================================================
 // カスタム型定義と型ガード
+// Vercel AI SDK v3.x UI Message Stream Protocol 準拠
 // =================================================================
 
 type TextPart = {
@@ -11,17 +12,22 @@ type TextPart = {
   text: string;
 };
 
-type SourceDocumentPart = {
-  type: "source-document";
-  sourceId?: string;
-  title?: string;
-  filename?: string;
-  mediaType?: string;
+type SourcePart = {
+  type: "source";
+  source: {
+    sourceId: string;
+    title: string;
+    url?: string;
+  };
 };
 
+/**
+ * データパート
+ * {"type":"data","data":[...]}
+ */
 type DataPart = {
-  type: `data-${string}`;
-  data: unknown;
+  type: "data";
+  data: unknown[];
 };
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -37,28 +43,55 @@ function isTextPart(part: unknown): part is TextPart {
 }
 
 /**
- * 参照ドキュメントパートかどうかの判定
+ * ソースパートかどうかの判定
  */
-function isSourceDocumentPart(part: unknown): part is SourceDocumentPart {
+function isSourcePart(part: unknown): part is SourcePart {
   if (!isObject(part)) return false;
-  return part.type === "source-document";
+  if (part.type !== "source") return false;
+  if (!isObject(part.source)) return false;
+  return typeof part.source.sourceId === "string";
 }
 
 /**
  * データパートかどうかの判定
+ * {"type":"data","data":[...]}
  */
 function isDataPart(part: unknown): part is DataPart {
   if (!isObject(part)) return false;
-  return typeof part.type === "string" && part.type.startsWith("data-");
+  return part.type === "data" && Array.isArray(part.data);
 }
 
 /**
  * SessionInfoPayload型ガード
- * Orvalで生成された型を使用
  */
 function isSessionInfoPayload(value: unknown): value is SessionInfoPayload {
   if (!isObject(value)) return false;
   return (
+    typeof value.sessionId === "string" &&
+    typeof value.historyId === "string" &&
+    typeof value.createdAt === "string"
+  );
+}
+
+/**
+ * CitationsPayloadアイテム型ガード
+ */
+function isCitationsItem(
+  value: unknown
+): value is { type: "citations"; citations: SourceDocument[] } {
+  if (!isObject(value)) return false;
+  return value.type === "citations" && Array.isArray(value.citations);
+}
+
+/**
+ * SessionInfoアイテム型ガード
+ */
+function isSessionInfoItem(
+  value: unknown
+): value is { type: "session_info" } & SessionInfoPayload {
+  if (!isObject(value)) return false;
+  return (
+    value.type === "session_info" &&
     typeof value.sessionId === "string" &&
     typeof value.historyId === "string" &&
     typeof value.createdAt === "string"
@@ -85,7 +118,9 @@ export function extractTextFromMessage(message: UIMessage): string {
 
 /**
  * メッセージから参照ドキュメント（citations）を抽出する
- * source-document パートのみを対象とする
+ * UI Message Stream Protocol:
+ * - source パート: {"type":"source","source":{...}}
+ * - data パート内の citations: {"type":"data","data":[{"type":"citations",...}]}
  */
 export function extractCitationsFromMessage(
   message: UIMessage
@@ -98,13 +133,23 @@ export function extractCitationsFromMessage(
   const sourceDocuments: SourceDocument[] = [];
 
   for (const part of parts) {
-    if (isSourceDocumentPart(part)) {
+    // 1. source パートから抽出
+    if (isSourcePart(part)) {
       sourceDocuments.push({
-        text: part.title || "",
-        fileName: part.filename || "",
-        documentId: part.sourceId || "",
+        text: part.source.title || "",
+        fileName: "",
+        documentId: part.source.sourceId || "",
         score: 0,
       });
+    }
+
+    // 2. data パート内の citations から抽出
+    if (isDataPart(part)) {
+      for (const item of part.data) {
+        if (isCitationsItem(item)) {
+          sourceDocuments.push(...item.citations);
+        }
+      }
     }
   }
 
@@ -113,7 +158,7 @@ export function extractCitationsFromMessage(
 
 /**
  * メッセージの parts からセッション情報を抽出する
- * バックエンドから data-session_info チャンクとして送信される
+ * UI Message Stream Protocol: {"type":"data","data":[{"type":"session_info",...}]}
  *
  * @param message - UIMessage
  * @returns SessionInfoPayload | undefined (Orval生成の型)
@@ -128,9 +173,16 @@ export function extractSessionInfoFromMessage(
   const parts = message.parts as unknown[];
 
   for (const part of parts) {
-    if (isDataPart(part) && part.type === "data-session_info") {
-      if (isSessionInfoPayload(part.data)) {
-        return part.data;
+    // data パート内の session_info を探す
+    if (isDataPart(part)) {
+      for (const item of part.data) {
+        if (isSessionInfoItem(item)) {
+          return {
+            sessionId: item.sessionId,
+            historyId: item.historyId,
+            createdAt: item.createdAt,
+          };
+        }
       }
     }
   }

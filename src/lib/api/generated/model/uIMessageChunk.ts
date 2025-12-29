@@ -5,21 +5,15 @@
  * API documentation for Myelin Base RAG backend
  * OpenAPI spec version: 1.0.0
  */
-import type { TextStartChunk } from "./textStartChunk";
 import type { TextDeltaChunk } from "./textDeltaChunk";
-import type { TextEndChunk } from "./textEndChunk";
-import type { SourceDocumentChunk } from "./sourceDocumentChunk";
+import type { SourceChunk } from "./sourceChunk";
 import type { ErrorChunk } from "./errorChunk";
-import type { SessionInfoDataChunk } from "./sessionInfoDataChunk";
-import type { CitationsDataChunk } from "./citationsDataChunk";
+import type { FinishChunk } from "./finishChunk";
 import type { DataChunk } from "./dataChunk";
 
 export type UIMessageChunk =
-  | TextStartChunk
   | TextDeltaChunk
-  | TextEndChunk
-  | SourceDocumentChunk
+  | SourceChunk
   | ErrorChunk
-  | SessionInfoDataChunk
-  | CitationsDataChunk
+  | FinishChunk
   | DataChunk;

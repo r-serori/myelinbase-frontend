@@ -78,16 +78,15 @@ export const postChatFeedbackResponse = zod.object({
     aiResponse: zod.string(),
     sourceDocuments: zod.array(
       zod.object({
+        text: zod.string(),
         fileName: zod.string(),
-        score: zod.number().optional(),
-        text: zod.string().optional(),
-        documentId: zod.string().optional(),
+        documentId: zod.string(),
+        score: zod.number(),
       })
     ),
     feedback: zod.enum(["NONE", "GOOD", "BAD"]),
-    feedbackComment: zod.string().optional(),
-    createdAt: zod.iso.datetime({}),
-    updatedAt: zod.iso.datetime({}).optional(),
+    createdAt: zod.string(),
+    updatedAt: zod.string().optional(),
   }),
 });
 
@@ -99,9 +98,9 @@ export const getChatSessionsResponse = zod.object({
     zod.object({
       sessionId: zod.string(),
       sessionName: zod.string(),
-      createdAt: zod.iso.datetime({}),
-      lastMessageAt: zod.iso.datetime({}),
-      updatedAt: zod.iso.datetime({}).optional(),
+      createdAt: zod.string(),
+      lastMessageAt: zod.string(),
+      updatedAt: zod.string().optional(),
     })
   ),
 });
@@ -128,10 +127,10 @@ export const getChatSessionsSessionIdResponse = zod.object({
       aiResponse: zod.string(),
       sourceDocuments: zod.array(
         zod.object({
+          text: zod.string(),
           fileName: zod.string(),
-          score: zod.number().optional(),
-          text: zod.string().optional(),
-          documentId: zod.string().optional(),
+          documentId: zod.string(),
+          score: zod.number(),
         })
       ),
       feedback: zod.enum(["NONE", "GOOD", "BAD"]),
@@ -162,9 +161,9 @@ export const patchChatSessionsSessionIdResponse = zod.object({
   session: zod.object({
     sessionId: zod.string(),
     sessionName: zod.string(),
-    createdAt: zod.iso.datetime({}),
-    lastMessageAt: zod.iso.datetime({}),
-    updatedAt: zod.iso.datetime({}).optional(),
+    createdAt: zod.string(),
+    lastMessageAt: zod.string(),
+    updatedAt: zod.string().optional(),
   }),
 });
 

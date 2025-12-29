@@ -5,9 +5,9 @@
  * API documentation for Myelin Base RAG backend
  * OpenAPI spec version: 1.0.0
  */
-import type { TextEndChunkType } from "./textEndChunkType";
 
-export interface TextEndChunk {
-  type: TextEndChunkType;
-  id: string;
-}
+export type SourceChunkSource = {
+  sourceId: string;
+  url: string;
+  title: string;
+};

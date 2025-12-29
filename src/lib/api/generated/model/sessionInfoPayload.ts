@@ -5,8 +5,10 @@
  * API documentation for Myelin Base RAG backend
  * OpenAPI spec version: 1.0.0
  */
+import type { SessionInfoPayloadType } from "./sessionInfoPayloadType";
 
 export interface SessionInfoPayload {
+  type?: SessionInfoPayloadType;
   sessionId: string;
   historyId: string;
   createdAt: string;

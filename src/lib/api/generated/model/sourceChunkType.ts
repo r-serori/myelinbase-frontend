@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type TextStartChunkType =
-  (typeof TextStartChunkType)[keyof typeof TextStartChunkType];
+export type SourceChunkType =
+  (typeof SourceChunkType)[keyof typeof SourceChunkType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const TextStartChunkType = {
-  "text-start": "text-start",
+export const SourceChunkType = {
+  source: "source",
 } as const;

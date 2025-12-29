@@ -6,10 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SessionInfoDataChunkType =
-  (typeof SessionInfoDataChunkType)[keyof typeof SessionInfoDataChunkType];
+export type FinishChunkFinishReason =
+  (typeof FinishChunkFinishReason)[keyof typeof FinishChunkFinishReason];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const SessionInfoDataChunkType = {
-  "data-session_info": "data-session_info",
+export const FinishChunkFinishReason = {
+  stop: "stop",
+  error: "error",
+  length: "length",
 } as const;

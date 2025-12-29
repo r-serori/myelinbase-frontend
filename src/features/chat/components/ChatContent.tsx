@@ -47,9 +47,6 @@ export default function ChatContent({
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  // ========================================
-  // Zustand Store
-  // ========================================
   const {
     localSessionId,
     setLocalSessionId,
@@ -324,6 +321,8 @@ export default function ChatContent({
     input,
     setInput,
     async ({ body, query }) => {
+      console.log("body", JSON.stringify(body, null, 2));
+      console.log("query", query);
       await sendMessage({ text: query }, { body });
     },
     isStreamingAnswer,

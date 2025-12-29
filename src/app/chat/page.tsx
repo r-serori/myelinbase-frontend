@@ -43,11 +43,6 @@ function Main() {
           sidebarCollapsed ? "ml-16" : "md:ml-56"
         } ${activeDocument ? "mr-0 md:mr-[600px]" : ""}`}
       >
-        {/* 
-          ChatWindowを廃止し、直接ChatContentを使用
-          状態管理はZustandで行い、セッション切り替え時のリセットも
-          ChatContent内部で制御する
-        */}
         <ChatContent
           sessionId={currentSessionId}
           isDocumentPreviewOpen={!!activeDocument}

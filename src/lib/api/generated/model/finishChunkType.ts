@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SourceDocumentChunkType =
-  (typeof SourceDocumentChunkType)[keyof typeof SourceDocumentChunkType];
+export type FinishChunkType =
+  (typeof FinishChunkType)[keyof typeof FinishChunkType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const SourceDocumentChunkType = {
-  "source-document": "source-document",
+export const FinishChunkType = {
+  finish: "finish",
 } as const;

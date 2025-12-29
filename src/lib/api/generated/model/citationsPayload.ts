@@ -5,8 +5,10 @@
  * API documentation for Myelin Base RAG backend
  * OpenAPI spec version: 1.0.0
  */
+import type { CitationsPayloadType } from "./citationsPayloadType";
 import type { SourceDocument } from "./sourceDocument";
 
 export interface CitationsPayload {
+  type?: CitationsPayloadType;
   citations: SourceDocument[];
 }

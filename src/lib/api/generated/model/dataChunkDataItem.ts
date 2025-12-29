@@ -9,4 +9,4 @@
 /**
  * @nullable
  */
-export type DataChunkData = unknown | null;
+export type DataChunkDataItem = unknown | null;

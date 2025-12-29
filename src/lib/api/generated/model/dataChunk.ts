@@ -5,12 +5,10 @@
  * API documentation for Myelin Base RAG backend
  * OpenAPI spec version: 1.0.0
  */
-import type { DataChunkData } from "./dataChunkData";
+import type { DataChunkType } from "./dataChunkType";
+import type { DataChunkDataItem } from "./dataChunkDataItem";
 
 export interface DataChunk {
-  /** @pattern ^data-.+$ */
-  type: string;
-  id?: string;
-  /** @nullable */
-  data?: DataChunkData;
+  type: DataChunkType;
+  data: DataChunkDataItem[];
 }

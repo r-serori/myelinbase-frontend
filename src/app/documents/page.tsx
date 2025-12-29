@@ -102,6 +102,9 @@ function Main() {
                 &nbsp;&nbsp;&nbsp;&nbsp;2. タグを確認・調整
                 <br />
                 &nbsp;&nbsp;&nbsp;&nbsp;3. ファイル名やタグで検索
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;4.
+                ステータスが「完了」になったドキュメントは、chat画面で引用できます
               </Text>
             )}
           </div>

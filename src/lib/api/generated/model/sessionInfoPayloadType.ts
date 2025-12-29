@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type CitationsDataChunkType =
-  (typeof CitationsDataChunkType)[keyof typeof CitationsDataChunkType];
+export type SessionInfoPayloadType =
+  (typeof SessionInfoPayloadType)[keyof typeof SessionInfoPayloadType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const CitationsDataChunkType = {
-  "data-citations": "data-citations",
+export const SessionInfoPayloadType = {
+  session_info: "session_info",
 } as const;

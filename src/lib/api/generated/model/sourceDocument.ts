@@ -7,8 +7,8 @@
  */
 
 export interface SourceDocument {
+  text: string;
   fileName: string;
-  score?: number;
-  text?: string;
-  documentId?: string;
+  documentId: string;
+  score: number;
 }

@@ -9,6 +9,5 @@ import type { TextDeltaChunkType } from "./textDeltaChunkType";
 
 export interface TextDeltaChunk {
   type: TextDeltaChunkType;
-  id: string;
-  delta: string;
+  textDelta: string;
 }
