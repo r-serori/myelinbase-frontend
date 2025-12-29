@@ -58,9 +58,7 @@ describe("useFileSelection", () => {
     });
 
     expect(result.current.selectedFiles).toHaveLength(0);
-    expect(result.current.errorMessage).toContain(
-      "未対応形式のためスキップ"
-    );
+    expect(result.current.errorMessage).toContain("未対応形式のためスキップ");
   });
 
   it("removes file", async () => {

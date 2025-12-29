@@ -10,6 +10,7 @@ import UploadStatusList from "@/features/documents/components/UploadStatusList";
 import {
   ALLOWED_EXTENSIONS,
   MAX_FILES,
+  MAX_TAGS,
 } from "@/features/documents/config/document-constants";
 import { useFileSelection } from "@/features/documents/hooks/useFileSelection";
 import { useUpload } from "@/features/documents/hooks/useUpload";
@@ -28,7 +29,6 @@ import { cn, parseTags } from "@/lib/utils";
 
 import { useToast } from "@/providers/ToastProvider";
 
-const MAX_DISPLAY_TAGS = 20;
 const ACCEPT_STRING = ALLOWED_EXTENSIONS.join(" ");
 
 export default function UploadForm({
@@ -69,9 +69,9 @@ export default function UploadForm({
   const { showToast } = useToast();
 
   const currentTags = useMemo(() => parseTags(tagsInput), [tagsInput]);
-  const visibleTags = currentTags.slice(0, MAX_DISPLAY_TAGS);
-  const hiddenCount = currentTags.length - MAX_DISPLAY_TAGS;
-  const isOverLimit = currentTags.length > MAX_DISPLAY_TAGS;
+  const visibleTags = currentTags.slice(0, MAX_TAGS);
+  const hiddenCount = currentTags.length - MAX_TAGS;
+  const isOverLimit = currentTags.length > MAX_TAGS;
 
   const normalizedAllTags = Array.from(
     new Set((allTags || []).map((t) => t.trim()).filter((t) => t.length > 0))
@@ -418,7 +418,7 @@ export default function UploadForm({
                 {isOverLimit && (
                   <Alert color="warning">
                     <Text variant="sm" color="warning" weight="medium">
-                      タグの上限（{MAX_DISPLAY_TAGS}個）を超えています。
+                      タグの上限（{MAX_TAGS}個）を超えています。
                       更新するにはタグを減らしてください。
                     </Text>
                   </Alert>

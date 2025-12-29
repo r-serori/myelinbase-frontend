@@ -84,7 +84,6 @@ export function useFileSelection() {
           out.push(preview);
         }
       }
-      // MAX_PREVIEW_COUNT以降は簡易表示（プレビュー生成しない）
     }
 
     setPreviews(out);
@@ -114,8 +113,11 @@ export function useFileSelection() {
 
   function isAllowedFile(file: File): boolean {
     const name = file.name.toLowerCase();
+    // 隠しファイル除外
     if (name.startsWith(".")) return false;
+    // 空ファイル除外
     if (file.size === 0) return false;
+    // 許可された拡張子かチェック
     return ALLOWED_EXTENSIONS.some((ext) => name.endsWith(ext));
   }
 
@@ -124,6 +126,7 @@ export function useFileSelection() {
       if (!files.length) return;
 
       setIsProcessing(true);
+      // 一旦ファイル数全体をtotalとしておく（後で修正）
       setProgress({ current: 0, total: files.length });
       setErrorMessage(null);
 
@@ -131,75 +134,97 @@ export function useFileSelection() {
       await new Promise((resolve) => setTimeout(resolve, 0));
 
       try {
-        const validFiles: File[] = [];
-        const invalidFiles: string[] = [];
+        const validCandidates: File[] = [];
+        const invalidFileNames: string[] = [];
 
-        // ファイル数上限チェック
-        const remainingSlots = MAX_FILES - selectedFiles.length;
-        if (remainingSlots <= 0) {
-          setErrorMessage(`ファイル数が上限（${MAX_FILES}件）に達しています。`);
-          return;
-        }
-
-        const filesToProcess = files.slice(0, remainingSlots);
-        const skippedByLimit = files.length - filesToProcess.length;
-
-        for (let i = 0; i < filesToProcess.length; i++) {
-          const f = filesToProcess[i];
-
+        // 1. まず全ての入力ファイルをチェックして選別する
+        // (ここで.DS_Storeなどを弾く)
+        for (const f of files) {
           if (isAllowedFile(f)) {
-            validFiles.push(f);
+            validCandidates.push(f);
           } else {
-            if (f.name !== "." && !f.name.startsWith(".")) {
-              invalidFiles.push(f.name);
+            // 明示的に無効なファイルのみログ記録（隠しファイルなどはユーザーに見せなくても良い場合があるが、
+            // ここでは元のロジックに従い記録する。.DS_Storeのようなシステムファイルは通知しなくても良いかもしれない）
+            if (f.name === "." || f.name.startsWith(".")) {
+              // システムファイルはあえてエラー通知しない設計ならここは無視でOK
+              // 今回は要件に従い記録
+              invalidFileNames.push(f.name);
+            } else {
+              // 拡張子違いなどもここ
+              invalidFileNames.push(f.name);
             }
           }
-
-          // 進捗更新（100件ごとにUIを更新）
-          if (i % 100 === 0) {
-            setProgress({ current: i + 1, total: filesToProcess.length });
-            await new Promise((resolve) => setTimeout(resolve, 0));
-          }
         }
 
-        // エラーメッセージ構築
+        // 2. 有効な候補に対してのみ、上限チェックを行う
+        const remainingSlots = MAX_FILES - selectedFiles.length;
+
+        // 追加対象となるファイル
+        const filesToAdd = validCandidates.slice(0, remainingSlots);
+
+        // 上限オーバーでスキップされた有効なファイルの数
+        const skippedByLimitCount = validCandidates.length - filesToAdd.length;
+
+        // エラーメッセージの構築
         const errorMessages: string[] = [];
 
-        if (skippedByLimit > 0) {
+        if (skippedByLimitCount > 0) {
           errorMessages.push(
-            `ファイル数上限（${MAX_FILES}件）のため、${skippedByLimit}件がスキップされました`
+            `ファイル数上限（${MAX_FILES}件）のため、${skippedByLimitCount}件がスキップされました`
           );
         }
 
-        if (invalidFiles.length > 0) {
-          const displayInvalid = invalidFiles.slice(0, 5);
-          const remaining = invalidFiles.length - 5;
-          errorMessages.push(
-            `未対応形式のためスキップ: ${displayInvalid.join(", ")}${
-              remaining > 0 ? ` 他 ${remaining} 件` : ""
-            }`
+        if (invalidFileNames.length > 0) {
+          // 無効ファイルのエラー表示（表示数が多すぎないように制限）
+          const displayInvalid = invalidFileNames.slice(0, 5);
+          const remaining = invalidFileNames.length - 5;
+
+          // .DS_Store だけの場合はユーザー体験的にエラーを出さない方が親切かもしれないが、
+          // 明示的に出すなら以下のようにする
+          const isOnlySystemFiles = invalidFileNames.every((name) =>
+            name.startsWith(".")
           );
+
+          if (!isOnlySystemFiles) {
+            // システムファイルのみの場合は通知を抑制する（必要に応じて変更可）
+            errorMessages.push(
+              `未対応形式のためスキップ: ${displayInvalid.join(", ")}${
+                remaining > 0 ? ` 他 ${remaining} 件` : ""
+              }`
+            );
+          }
         }
 
         if (errorMessages.length > 0) {
           setErrorMessage(errorMessages.join("\n"));
         }
 
-        if (validFiles.length === 0) return;
+        if (filesToAdd.length === 0) return;
 
+        // 3. 追加対象ファイルの処理（重複名リネームなど）
         const existingNames = new Set(selectedFiles.map((f) => f.name));
+        const newFiles: File[] = [];
 
-        const newFiles = validFiles.map((f) => {
+        // プログレスバーの更新用
+        setProgress({ current: 0, total: filesToAdd.length });
+
+        for (let i = 0; i < filesToAdd.length; i++) {
+          const f = filesToAdd[i];
           const uniqueFile = getUniqueFileName(f, existingNames);
           existingNames.add(uniqueFile.name);
-          return uniqueFile;
-        });
+          newFiles.push(uniqueFile);
+
+          // 処理が重い場合に備えてUI更新の隙間を作る
+          if (i % 5 === 0) {
+            setProgress({ current: i + 1, total: filesToAdd.length });
+            await new Promise((resolve) => setTimeout(resolve, 0));
+          }
+        }
 
         const next = [...selectedFiles, ...newFiles];
         setSelectedFiles(next);
 
         // プレビュー生成
-        setProgress({ current: 0, total: next.length });
         await buildPreviews(next);
       } finally {
         setIsProcessing(false);

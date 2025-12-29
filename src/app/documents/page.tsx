@@ -11,6 +11,7 @@ import FileUploadModal from "@/features/documents/components/FileUploadModal";
 import { useDocumentDeleteActions } from "@/features/documents/hooks/useDocumentDeleteActions";
 import { useDocumentFilters } from "@/features/documents/hooks/useDocumentFilters";
 import { useDocuments } from "@/features/documents/hooks/useDocuments";
+import { usePendingDocumentsPolling } from "@/features/documents/hooks/usePendingDocumentsPolling";
 import { Button } from "@/components/ui/Button";
 import { Text } from "@/components/ui/Text";
 import { useQueryErrorToast } from "@/hooks/useQueryErrorToast";
@@ -31,6 +32,10 @@ function Main() {
   // 一覧の取得
   const { data, isLoading, refetch, isError, error } = useDocuments();
   useQueryErrorToast(isError, error);
+
+  const { hasPendingDocs, pendingCount } = usePendingDocumentsPolling(
+    data?.documents
+  );
 
   // フィルタリングロジック
   const {
@@ -132,6 +137,8 @@ function Main() {
 
         {/* --- ドキュメント一覧 --- */}
         <DocumentTable
+          hasPendingDocs={hasPendingDocs}
+          pendingCount={pendingCount}
           documents={filteredDocuments}
           loading={isLoading}
           onDelete={deleteActions.onDeleteClick}

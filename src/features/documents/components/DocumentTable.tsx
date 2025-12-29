@@ -17,6 +17,8 @@ import {
 const PAGE_SIZE = 20;
 
 export default function DocumentTable({
+  hasPendingDocs,
+  pendingCount,
   documents,
   loading,
   onDelete,
@@ -29,6 +31,8 @@ export default function DocumentTable({
   onSelect,
   onSelectAll,
 }: {
+  hasPendingDocs: boolean;
+  pendingCount: number;
   documents: DocumentResponse[];
   loading?: boolean;
   onDelete?: (documentId: string) => void;
@@ -86,6 +90,11 @@ export default function DocumentTable({
         <Text variant="sm" weight="semibold" color="default">
           アップロード済みファイル一覧
         </Text>
+        {hasPendingDocs && (
+          <Text variant="sm" weight="semibold" color="primary">
+            {pendingCount} 件のファイルを処理中...
+          </Text>
+        )}
         <div className="flex flex-col md:flex-row items-center gap-2 md:gap-8">
           {!loading && totalCount > 0 && (
             <div className="bg-background flex gap-2 text-xs sm:flex-row items-center justify-end">

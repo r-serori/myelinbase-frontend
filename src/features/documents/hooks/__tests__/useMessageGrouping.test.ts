@@ -2,10 +2,10 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { useMessageGrouping } from "@/features/chat/hooks/useMessageGrouping";
-import { FeedbackType } from "@/lib/api/generated/model";
+import { FeedbackType, MessageSummary } from "@/lib/api/generated/model";
 
 describe("useMessageGrouping", () => {
-  const mockMessages: [] = [
+  const mockMessages: MessageSummary[] = [
     {
       historyId: "1",
       userQuery: "Hello V1",

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -33,7 +34,7 @@ export function useDocuments(filters?: {
           mode: filters?.mode || "AND",
         },
       ],
-      staleTime: 5000,
+      staleTime: 10_000,
     },
   });
 }
@@ -41,9 +42,10 @@ export function useDocuments(filters?: {
 export function useDocumentById(documentId?: string) {
   const queryClient = useQueryClient();
 
-  return useGetDocumentsId(documentId!, {
+  const query = useGetDocumentsId(documentId!, {
     query: {
       enabled: !!documentId,
+      staleTime: 10_000,
       placeholderData: () => {
         if (!documentId) return undefined;
         const queries = queryClient.getQueryCache().findAll({
@@ -63,6 +65,34 @@ export function useDocumentById(documentId?: string) {
       },
     },
   });
+
+  // 取得成功時に一覧キャッシュを同期
+  useEffect(() => {
+    if (query.data?.document && documentId) {
+      queryClient.setQueriesData<GetDocumentsResponse>(
+        { queryKey: queryKeys.documents },
+        (oldData) => {
+          if (!oldData?.documents) return oldData;
+
+          // 既存ドキュメントを更新
+          const exists = oldData.documents.some(
+            (doc) => doc.documentId === documentId
+          );
+
+          if (!exists) return oldData;
+
+          return {
+            ...oldData,
+            documents: oldData.documents.map((doc) =>
+              doc.documentId === documentId ? query.data!.document : doc
+            ),
+          };
+        }
+      );
+    }
+  }, [query.data?.document, documentId, queryClient]);
+
+  return query;
 }
 
 /**
@@ -77,7 +107,6 @@ export function useDeleteDocument() {
         qc.removeQueries({ queryKey: getGetDocumentsIdQueryKey(variables.id) });
 
         // 2. 一覧画面のキャッシュから除外
-        // 修正: queryKeyを queryKeys.documents に変更
         qc.setQueriesData<GetDocumentsResponse>(
           { queryKey: queryKeys.documents },
           (oldData) => {
@@ -119,7 +148,6 @@ export function useBatchDeleteDocuments() {
           qc.removeQueries({ queryKey: getGetDocumentsIdQueryKey(id) });
         });
 
-        // 修正: queryKeyを queryKeys.documents に変更
         qc.setQueriesData<GetDocumentsResponse>(
           { queryKey: queryKeys.documents },
           (oldData) => {
@@ -157,13 +185,12 @@ export function useUpdateDocumentTags() {
         // 1. 詳細画面のキャッシュを更新
         qc.setQueryData<GetDocumentResponse>(
           getGetDocumentsIdQueryKey(variables.id),
-          (oldData) => {
+          () => {
             return { document: data.document };
           }
         );
 
         // 2. 一覧画面のキャッシュを更新
-        // 修正: queryKeyを queryKeys.documents に変更
         qc.setQueriesData<GetDocumentsResponse>(
           { queryKey: queryKeys.documents },
           (oldData) => {

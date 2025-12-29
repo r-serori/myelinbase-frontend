@@ -26,6 +26,7 @@ export default function FileUploadModal({
       <br />
       3.アップロード
       <br />
+      4. ステータスが「完了」になったドキュメントは、chat画面で引用できます。
     </Text>
   );
   return (
