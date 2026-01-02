@@ -33,7 +33,9 @@ describe("useChatForm", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (navigation.useRouter as any).mockReturnValue({ replace: mockReplace }); // eslint-disable-line @typescript-eslint/no-explicit-any
+    vi.mocked(navigation.useRouter).mockReturnValue({
+      replace: mockReplace,
+    } as ReturnType<typeof navigation.useRouter>);
   });
 
   it("calls onSubmit on doSend with valid input", async () => {

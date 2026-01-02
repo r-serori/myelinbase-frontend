@@ -1,8 +1,13 @@
+import type { ReactNode } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as useDocuments from "@/features/documents/hooks/useDocuments";
-import { DocumentStatus } from "@/lib/api/generated/model";
+import {
+  DocumentResponse,
+  DocumentStatus,
+  GetDocumentResponse,
+} from "@/lib/api/generated/model";
 
 import DocumentDetailsModal from "../DocumentDetailsModal";
 
@@ -15,7 +20,17 @@ vi.mock("@/features/documents/hooks/useDocuments", () => ({
 
 // Mock UI components
 vi.mock("@/components/ui/Modal", () => ({
-  Modal: ({ children, isOpen, onClose, title }: any) =>
+  Modal: ({
+    children,
+    isOpen,
+    onClose,
+    title,
+  }: {
+    children: ReactNode;
+    isOpen: boolean;
+    onClose: () => void;
+    title?: string;
+  }) =>
     isOpen ? (
       <div role="dialog">
         <h1>{title}</h1>
@@ -27,15 +42,17 @@ vi.mock("@/components/ui/Modal", () => ({
     ) : null,
 }));
 
-// Mock LightLoading
-vi.mock("@/components/ui/LightLoading", () => ({
-  default: ({ isLoading }: { isLoading: boolean }) =>
-    isLoading ? <div data-testid="light-loading">Loading...</div> : null,
-}));
+// LightLoadingコンポーネントは実際のコンポーネントを使用（data-testidが設定されているため）
 
 // Mock Alert
 vi.mock("@/components/ui/Alert", () => ({
-  default: ({ children, color }: any) => (
+  default: ({
+    children,
+    color,
+  }: {
+    children: ReactNode;
+    color?: "default" | "primary" | "warning" | "destructive" | "success";
+  }) => (
     <div data-testid="alert" data-color={color}>
       {children}
     </div>
@@ -54,7 +71,9 @@ describe("DocumentDetailsModal", () => {
   const mockUpdateTagsMutate = vi.fn();
   const mockGetDownloadUrlMutate = vi.fn();
 
-  const createMockDoc = (overrides?: Partial<any>) => ({
+  const createMockDoc = (
+    overrides?: Partial<DocumentResponse>
+  ): DocumentResponse => ({
     documentId: "1",
     fileName: "test.pdf",
     status: DocumentStatus.COMPLETED,
@@ -66,43 +85,63 @@ describe("DocumentDetailsModal", () => {
     ...overrides,
   });
 
+  // ヘルパー関数: useDocumentByIdのモック戻り値を作成
+  const createMockUseDocumentById = (
+    data: GetDocumentResponse | undefined,
+    isLoading = false
+  ) =>
+    ({
+      data,
+      isLoading,
+      refetch: mockRefetch,
+    }) as unknown as ReturnType<typeof useDocuments.useDocumentById>;
+
+  // ヘルパー関数: useUpdateDocumentTagsのモック戻り値を作成
+  const createMockUseUpdateDocumentTags = (isPending = false) =>
+    ({
+      mutateAsync: mockUpdateTagsMutate,
+      isPending,
+    }) as unknown as ReturnType<typeof useDocuments.useUpdateDocumentTags>;
+
+  // ヘルパー関数: useGetDocumentDownloadUrlのモック戻り値を作成
+  const createMockUseGetDocumentDownloadUrl = (isPending = false) =>
+    ({
+      mutateAsync: mockGetDownloadUrlMutate,
+      isPending,
+    }) as unknown as ReturnType<typeof useDocuments.useGetDocumentDownloadUrl>;
+
   beforeEach(() => {
     vi.clearAllMocks();
 
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc() },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({ document: createMockDoc() })
+    );
 
-    (useDocuments.useUpdateDocumentTags as any).mockReturnValue({
-      mutateAsync: mockUpdateTagsMutate,
-      isPending: false,
-    });
+    vi.mocked(useDocuments.useUpdateDocumentTags).mockReturnValue(
+      createMockUseUpdateDocumentTags()
+    );
 
-    (useDocuments.useGetDocumentDownloadUrl as any).mockReturnValue({
-      mutateAsync: mockGetDownloadUrlMutate,
-      isPending: false,
-    });
+    vi.mocked(useDocuments.useGetDocumentDownloadUrl).mockReturnValue(
+      createMockUseGetDocumentDownloadUrl()
+    );
   });
 
   it("shows loading spinner initially", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: null,
-      isLoading: true,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById(undefined, true)
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
-    expect(screen.getByTestId("light-loading")).toBeInTheDocument();
+    // LightLoadingコンポーネント内の "Loading..." テキストで検証
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
   it("renders document details", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: ["tag1"] }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: ["tag1"] }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -113,11 +152,11 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("handles tag addition", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: [] }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: [] }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -132,11 +171,11 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("handles tag addition with Enter key", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: [] }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: [] }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -148,11 +187,11 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("does not add duplicate tags", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: ["existing-tag"] }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: ["existing-tag"] }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -168,11 +207,11 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("handles tag removal", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: ["tag1", "tag2"] }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: ["tag1", "tag2"] }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -188,11 +227,11 @@ describe("DocumentDetailsModal", () => {
   it("calls updateTags on save", async () => {
     mockUpdateTagsMutate.mockResolvedValue(undefined);
 
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: ["existing"] }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: ["existing"] }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -219,11 +258,11 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("disables save button when tags are unchanged", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: ["tag1"] }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: ["tag1"] }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -232,11 +271,11 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("disables save button when tags are empty", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: [] }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: [] }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -248,11 +287,11 @@ describe("DocumentDetailsModal", () => {
     const error = new Error("Update failed");
     mockUpdateTagsMutate.mockRejectedValue(error);
 
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: ["tag1"] }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: ["tag1"] }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -274,11 +313,11 @@ describe("DocumentDetailsModal", () => {
 
   it("shows warning when tag count exceeds limit", () => {
     const manyTags = Array.from({ length: 21 }, (_, i) => `tag${i + 1}`);
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: manyTags }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: manyTags }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -289,11 +328,11 @@ describe("DocumentDetailsModal", () => {
 
   it("disables input and buttons when tag count exceeds limit", () => {
     const manyTags = Array.from({ length: 21 }, (_, i) => `tag${i + 1}`);
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: manyTags }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: manyTags }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -375,11 +414,11 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("does not show preview button for non-completed documents", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ status: DocumentStatus.PROCESSING }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ status: DocumentStatus.PROCESSING }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -392,11 +431,11 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("shows status message for PROCESSING status", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ status: DocumentStatus.PROCESSING }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ status: DocumentStatus.PROCESSING }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -408,13 +447,11 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("shows status message for PENDING_UPLOAD status", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: {
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
         document: createMockDoc({ status: DocumentStatus.PENDING_UPLOAD }),
-      },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -426,11 +463,9 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("shows document not found message", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: null,
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById(undefined)
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -440,10 +475,9 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("shows loading state when isPending is true for updateTags", () => {
-    (useDocuments.useUpdateDocumentTags as any).mockReturnValue({
-      mutateAsync: mockUpdateTagsMutate,
-      isPending: true,
-    });
+    vi.mocked(useDocuments.useUpdateDocumentTags).mockReturnValue(
+      createMockUseUpdateDocumentTags(true)
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -452,10 +486,9 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("shows loading state when isPending is true for getDownloadUrl", () => {
-    (useDocuments.useGetDocumentDownloadUrl as any).mockReturnValue({
-      mutateAsync: mockGetDownloadUrlMutate,
-      isPending: true,
-    });
+    vi.mocked(useDocuments.useGetDocumentDownloadUrl).mockReturnValue(
+      createMockUseGetDocumentDownloadUrl(true)
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -466,11 +499,11 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("shows empty tag message when no tags exist", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: [] }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: [] }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -480,11 +513,11 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("disables add button when input is empty", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: [] }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: [] }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 
@@ -502,11 +535,11 @@ describe("DocumentDetailsModal", () => {
   });
 
   it("displays tag count correctly", () => {
-    (useDocuments.useDocumentById as any).mockReturnValue({
-      data: { document: createMockDoc({ tags: ["tag1", "tag2", "tag3"] }) },
-      isLoading: false,
-      refetch: mockRefetch,
-    });
+    vi.mocked(useDocuments.useDocumentById).mockReturnValue(
+      createMockUseDocumentById({
+        document: createMockDoc({ tags: ["tag1", "tag2", "tag3"] }),
+      })
+    );
 
     render(<DocumentDetailsModal documentId="1" onClose={mockOnClose} />);
 

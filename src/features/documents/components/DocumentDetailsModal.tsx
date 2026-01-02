@@ -29,9 +29,6 @@ import { handleCommonError } from "@/lib/error-handler";
 
 import { useToast } from "@/providers/ToastProvider";
 
-// =================================================================
-// 編集コンテンツ（docが確定した状態でマウント）
-// =================================================================
 interface DocumentDetailsContentProps {
   doc: DocumentResponse;
   refetch: () => Promise<unknown>;
@@ -105,7 +102,6 @@ function DocumentDetailsContent({ doc, refetch }: DocumentDetailsContentProps) {
 
   return (
     <div>
-      {/* 基本情報セクション */}
       <div className="grid grid-cols-[100px_1fr] gap-y-4 items-start space-y-2">
         <Text variant="md" color="muted" weight="medium" className="py-1">
           ファイル名
@@ -140,7 +136,6 @@ function DocumentDetailsContent({ doc, refetch }: DocumentDetailsContentProps) {
 
       {errorMessage && <Alert color="destructive">{errorMessage}</Alert>}
 
-      {/* タグ編集セクション */}
       <div className="py-5 space-y-3">
         <div className="flex items-center justify-between">
           <Text
@@ -258,7 +253,6 @@ function DocumentDetailsContent({ doc, refetch }: DocumentDetailsContentProps) {
         </div>
       </div>
 
-      {/* フッターアクション */}
       {doc.status === "COMPLETED" ? (
         <div className="flex justify-end">
           <Button
@@ -291,9 +285,6 @@ function DocumentDetailsContent({ doc, refetch }: DocumentDetailsContentProps) {
   );
 }
 
-// =================================================================
-// メインのモーダルコンポーネント
-// =================================================================
 export default function DocumentDetailsModal({
   documentId,
   onClose,
@@ -309,11 +300,10 @@ export default function DocumentDetailsModal({
       <div className="text-sm">
         {isLoading && (
           <div className="flex justify-center items-center py-12 text-gray-500 gap-2">
-            <LightLoading isLoading={isLoading} />
+            <LightLoading />
           </div>
         )}
 
-        {/* ✅ docが確定してからContentをマウント */}
         {!isLoading && doc && (
           <DocumentDetailsContent
             key={doc.documentId}

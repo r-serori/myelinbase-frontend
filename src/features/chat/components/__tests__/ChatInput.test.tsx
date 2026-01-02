@@ -1,7 +1,8 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import ChatInput from "../ChatInput";
 import { createRef } from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import ChatInput from "../ChatInput";
 
 // next/router のモック
 vi.mock("next/router", () => ({

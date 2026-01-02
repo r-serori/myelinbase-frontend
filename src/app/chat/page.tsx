@@ -23,6 +23,7 @@ function Main() {
   const currentSessionId = search.get("sessionId") || undefined;
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const [activeDocument, setActiveDocument] = useState<SourceDocument | null>(
     null
   );

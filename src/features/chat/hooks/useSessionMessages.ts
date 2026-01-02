@@ -10,7 +10,6 @@ export function useSessionMessages(
   options?: { enabled?: boolean }
 ) {
   return useInfiniteQuery({
-    // ★ queryKeysに統一（ChatContent.tsxと同じキー）
     queryKey: [...queryKeys.sessionMessages(sessionId ?? ""), { limit, order }],
     initialPageParam: null as string | null,
     queryFn: async ({ pageParam, signal }) => {

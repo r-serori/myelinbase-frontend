@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
 import SessionSideBar from "../SessionSideBar";
 
 // Next.js router のモック
@@ -65,7 +66,9 @@ describe("SessionSideBar", () => {
   });
 
   it("applies collapsed width when sidebarCollapsed is true", () => {
-    const { container } = render(<SessionSideBar {...defaultProps} sidebarCollapsed={true} />);
+    const { container } = render(
+      <SessionSideBar {...defaultProps} sidebarCollapsed={true} />
+    );
     const aside = container.querySelector("aside");
     expect(aside).toHaveClass("w-16");
   });

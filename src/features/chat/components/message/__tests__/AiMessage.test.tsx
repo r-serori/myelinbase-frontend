@@ -116,9 +116,12 @@ describe("AiMessage", () => {
 
     expect(defaultProps.onGoodFeedback).toHaveBeenCalledWith("hist-1");
     // showFeedbackToastがtrueになるとFeedbackToastが表示される
-    await waitFor(() => {
-      expect(screen.getByTestId("feedback-toast")).toBeInTheDocument();
-    }, { timeout: 1000 });
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("feedback-toast")).toBeInTheDocument();
+      },
+      { timeout: 1000 }
+    );
   });
 
   it("handles bad feedback modal flow", async () => {

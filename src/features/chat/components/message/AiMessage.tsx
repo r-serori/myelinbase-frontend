@@ -138,29 +138,26 @@ export default function AiMessage({
   const showLoadingState = isGenerating && !text;
 
   return (
-    <div className="w-full flex mt-8 justify-start flex-col">
+    <div
+      className={`w-full flex mt-8 justify-start flex-col md:flex-row ${showLoadingState && "md:items-center"}`}
+    >
       <div className="flex-shrink-0">
         <Image
           src="/images/icon.png"
           alt="Myelin Base Logo"
           width={32}
           height={32}
-          className={`object-contain ${isGenerating ? "animate-bounce" : ""}`}
+          className="object-contain"
         />
       </div>
 
-      <div className="w-full flex flex-col items-start max-w-full min-w-0">
+      <div className="w-full flex flex-col max-w-full min-w-0">
         <div className="flex flex-col w-full">
-          <div className="rounded-xl px-4 py-3 text-sm max-w-full">
+          <div className="rounded-xl px-4 text-sm max-w-full">
             {showLoadingState ? (
-              <Text
-                variant="md"
-                color="muted"
-                className="animate-pulse"
-                as="span"
-              >
+              <p className="thinking-text text-sm">
                 Myelin Baseが応答を生成しています...
-              </Text>
+              </p>
             ) : (
               <>
                 <MarkdownViewer content={text} />

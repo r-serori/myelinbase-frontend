@@ -126,46 +126,30 @@ export function useFileSelection() {
       if (!files.length) return;
 
       setIsProcessing(true);
-      // 一旦ファイル数全体をtotalとしておく（後で修正）
       setProgress({ current: 0, total: files.length });
       setErrorMessage(null);
 
-      // UIをブロックしないために次のフレームで処理開始
       await new Promise((resolve) => setTimeout(resolve, 0));
 
       try {
         const validCandidates: File[] = [];
         const invalidFileNames: string[] = [];
 
-        // 1. まず全ての入力ファイルをチェックして選別する
-        // (ここで.DS_Storeなどを弾く)
         for (const f of files) {
           if (isAllowedFile(f)) {
             validCandidates.push(f);
           } else {
-            // 明示的に無効なファイルのみログ記録（隠しファイルなどはユーザーに見せなくても良い場合があるが、
-            // ここでは元のロジックに従い記録する。.DS_Storeのようなシステムファイルは通知しなくても良いかもしれない）
             if (f.name === "." || f.name.startsWith(".")) {
-              // システムファイルはあえてエラー通知しない設計ならここは無視でOK
-              // 今回は要件に従い記録
               invalidFileNames.push(f.name);
             } else {
-              // 拡張子違いなどもここ
               invalidFileNames.push(f.name);
             }
           }
         }
 
-        // 2. 有効な候補に対してのみ、上限チェックを行う
         const remainingSlots = MAX_FILES - selectedFiles.length;
-
-        // 追加対象となるファイル
         const filesToAdd = validCandidates.slice(0, remainingSlots);
-
-        // 上限オーバーでスキップされた有効なファイルの数
         const skippedByLimitCount = validCandidates.length - filesToAdd.length;
-
-        // エラーメッセージの構築
         const errorMessages: string[] = [];
 
         if (skippedByLimitCount > 0) {

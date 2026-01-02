@@ -1,12 +1,36 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
+import type { DocumentResponse } from "@/lib/api/generated/model";
+
 import FileUploadModal from "../FileUploadModal";
-import { describe, it, expect, vi } from "vitest";
 
 // Mock UploadForm
 vi.mock("../UploadForm", () => ({
-  default: ({ onUploaded }: { onUploaded: (docs: any[]) => void }) => (
+  default: ({
+    onUploaded,
+  }: {
+    onUploaded: (docs: DocumentResponse[]) => void;
+  }) => (
     <div data-testid="upload-form">
-      <button onClick={() => onUploaded([{ id: "doc1" }])}>
+      <button
+        onClick={() =>
+          onUploaded([
+            {
+              documentId: "doc1",
+              fileName: "test.pdf",
+              contentType: "application/pdf",
+              fileSize: 1000,
+              status: "COMPLETED",
+              tags: [],
+              createdAt: "2023-01-01T00:00:00Z",
+              updatedAt: "2023-01-01T00:00:00Z",
+              ownerId: "user1",
+            } as DocumentResponse,
+          ])
+        }
+      >
         Upload Complete
       </button>
     </div>
@@ -15,7 +39,17 @@ vi.mock("../UploadForm", () => ({
 
 // Mock Modal to render children immediately
 vi.mock("@/components/ui/Modal", () => ({
-  Modal: ({ children, isOpen, onClose, title }: any) =>
+  Modal: ({
+    children,
+    isOpen,
+    onClose,
+    title,
+  }: {
+    children: ReactNode;
+    isOpen: boolean;
+    onClose: () => void;
+    title?: string;
+  }) =>
     isOpen ? (
       <div role="dialog">
         <h1>{title}</h1>
@@ -25,8 +59,8 @@ vi.mock("@/components/ui/Modal", () => ({
         {children}
       </div>
     ) : null,
-  ModalBody: ({ children }: any) => <div>{children}</div>,
-  ModalHeader: ({ children }: any) => <div>{children}</div>,
+  ModalBody: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  ModalHeader: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
 describe("FileUploadModal", () => {
@@ -62,7 +96,17 @@ describe("FileUploadModal", () => {
     fireEvent.click(screen.getByText("Upload Complete"));
 
     expect(defaultProps.onAppendDocuments).toHaveBeenCalledWith([
-      { id: "doc1" },
+      {
+        documentId: "doc1",
+        fileName: "test.pdf",
+        contentType: "application/pdf",
+        fileSize: 1000,
+        status: "COMPLETED",
+        tags: [],
+        createdAt: "2023-01-01T00:00:00Z",
+        updatedAt: "2023-01-01T00:00:00Z",
+        ownerId: "user1",
+      },
     ]);
     expect(defaultProps.refetch).toHaveBeenCalled();
     expect(defaultProps.setShowUploadModal).toHaveBeenCalledWith(false);

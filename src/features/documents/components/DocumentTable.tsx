@@ -222,7 +222,7 @@ export default function DocumentTable({
               <tr>
                 <td className="p-8" colSpan={6}>
                   <div className="flex justify-center">
-                    <LightLoading isLoading={!!loading} />
+                    <LightLoading />
                   </div>
                 </td>
               </tr>

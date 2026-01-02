@@ -1,7 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AppliedFilters, FilterState } from "@/hooks/useDocumentFilters";
+import type {
+  AppliedFilters,
+  FilterState,
+} from "@/features/documents/hooks/useDocumentFilters";
 
 import DocumentSearchBar from "../DocumentSearchBar";
 
@@ -12,6 +15,7 @@ describe("DocumentSearchBar", () => {
     statusFilter: "ALL",
     tagMode: "OR",
     isUntaggedInput: false,
+    showTagSuggestions: false,
   };
 
   const defaultApplied: AppliedFilters = {
@@ -145,11 +149,6 @@ describe("DocumentSearchBar", () => {
     fireEvent.focus(input);
 
     expect(mockActions.setShowTagSuggestions).toHaveBeenCalledWith(true);
-
-    // Since DropdownList renders children, we check if suggestions are rendered.
-    // Note: The component logic: {tagSuggestions.length > 0 && ... <DropdownList>}
-    // But it might depend on parent state passing down suggestions.
-    // Here we pass suggestions via props, so they should render if the condition is met.
     expect(screen.getByText("suggest1")).toBeInTheDocument();
   });
 });

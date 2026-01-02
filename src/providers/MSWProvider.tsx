@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { env } from "@/lib/env";
 
 export function MSWProvider({ children }: { children: React.ReactNode }) {
@@ -11,9 +12,8 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
       if (env.NEXT_PUBLIC_API_MOCKING === "enabled") {
         const { worker } = await import("../mocks/browser");
         await worker.start({
-          onUnhandledRequest: "bypass", // モックされていないリクエストはそのまま通す
+          onUnhandledRequest: "bypass",
         });
-        console.log("[MSW] Mocking enabled");
       }
       setMswReady(true);
     };
@@ -22,8 +22,6 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (!mswReady) {
-    // MSWの初期化を待つ間、何も表示しない
-    // これにより、初期化前のリクエストがモックされずに飛ぶのを防ぐ
     return null;
   }
 

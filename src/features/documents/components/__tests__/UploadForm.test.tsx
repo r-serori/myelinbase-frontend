@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as useFileSelection from "@/features/documents/hooks/useFileSelection";
 import * as useUpload from "@/features/documents/hooks/useUpload";
 
+import type { Preview } from "../FilePreviewList";
 import UploadForm from "../UploadForm";
 
 // Mock Hooks
@@ -22,9 +23,15 @@ vi.mock("@/providers/ToastProvider", () => ({
 
 // Mock UI components
 vi.mock("../FilePreviewList", () => ({
-  default: ({ previews, onRemove }: any) => (
+  default: ({
+    previews,
+    onRemove,
+  }: {
+    previews: Preview[];
+    onRemove: (name: string) => void;
+  }) => (
     <div data-testid="preview-list">
-      {previews.map((p: any) => (
+      {previews.map((p) => (
         <div key={p.name}>
           {p.name} <button onClick={() => onRemove(p.name)}>Remove</button>
         </div>
@@ -45,6 +52,8 @@ describe("UploadForm", () => {
     previews: [],
     errorMessage: null,
     setErrorMessage: mockSetErrorMessage,
+    isProcessing: false,
+    progress: { current: 0, total: 0 },
     addFiles: mockAddFiles,
     removeFile: mockRemoveFile,
     clearFiles: mockClearFiles,
@@ -52,14 +61,15 @@ describe("UploadForm", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useUpload.useUpload as any).mockReturnValue({
+    vi.mocked(useUpload.useUpload).mockReturnValue({
+      upload: vi.fn(),
       uploadAsync: mockUploadAsync,
       isPending: false,
       progress: {},
       status: "idle",
       error: null,
     });
-    (useFileSelection.useFileSelection as any).mockReturnValue(
+    vi.mocked(useFileSelection.useFileSelection).mockReturnValue(
       defaultFileSelection
     );
   });
@@ -89,7 +99,7 @@ describe("UploadForm", () => {
   });
 
   it("renders selected files and allows removal", () => {
-    (useFileSelection.useFileSelection as any).mockReturnValue({
+    vi.mocked(useFileSelection.useFileSelection).mockReturnValue({
       ...defaultFileSelection,
       selectedFiles: [new File([""], "test.txt")],
       previews: [
@@ -113,7 +123,7 @@ describe("UploadForm", () => {
   });
 
   it("handles tag input", () => {
-    (useFileSelection.useFileSelection as any).mockReturnValue({
+    vi.mocked(useFileSelection.useFileSelection).mockReturnValue({
       ...defaultFileSelection,
       selectedFiles: [new File([""], "test.txt")],
     });
@@ -127,7 +137,7 @@ describe("UploadForm", () => {
 
   it("calls uploadAsync on submit", async () => {
     const file = new File(["content"], "test.txt", { type: "text/plain" });
-    (useFileSelection.useFileSelection as any).mockReturnValue({
+    vi.mocked(useFileSelection.useFileSelection).mockReturnValue({
       ...defaultFileSelection,
       selectedFiles: [file],
       previews: [
@@ -159,7 +169,7 @@ describe("UploadForm", () => {
   });
 
   it("displays error message", () => {
-    (useFileSelection.useFileSelection as any).mockReturnValue({
+    vi.mocked(useFileSelection.useFileSelection).mockReturnValue({
       ...defaultFileSelection,
       errorMessage: "エラーが発生しました",
     });

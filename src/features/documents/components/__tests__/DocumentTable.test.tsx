@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { DocumentResponse } from "@/lib/api/generated/model";
 
@@ -7,10 +7,12 @@ import DocumentTable from "../DocumentTable";
 
 // Mock child components to simplify test
 vi.mock("../StatusChip", () => ({
-  default: ({ status }: any) => <span data-testid="status-chip">{status}</span>,
+  default: ({ status }: { status: string }) => (
+    <span data-testid="status-chip">{status}</span>
+  ),
 }));
 vi.mock("../TagList", () => ({
-  default: ({ tags }: any) => (
+  default: ({ tags }: { tags: string[] }) => (
     <div data-testid="tag-list">{tags.join(", ")}</div>
   ),
 }));
@@ -25,10 +27,7 @@ describe("DocumentTable", () => {
       createdAt: "2023-01-01T10:00:00Z",
       contentType: "text/plain",
       fileSize: 1000,
-      s3Key: "key1",
-      s3Path: "path1",
       updatedAt: "2023-01-01T10:00:00Z",
-      ownerId: "user1",
     },
     {
       documentId: "2",
@@ -38,14 +37,13 @@ describe("DocumentTable", () => {
       createdAt: "2023-01-02T10:00:00Z",
       contentType: "application/pdf",
       fileSize: 2000,
-      s3Key: "key2",
-      s3Path: "path2",
       updatedAt: "2023-01-02T10:00:00Z",
-      ownerId: "user1",
     },
   ];
 
   const defaultProps = {
+    hasPendingDocs: false,
+    pendingCount: 0,
     documents: mockDocuments,
     loading: false,
     onDelete: vi.fn(),
@@ -127,7 +125,8 @@ describe("DocumentTable", () => {
   it("disables delete button for processing status", () => {
     render(<DocumentTable {...defaultProps} />);
     // PROCESSING状態のドキュメントの削除ボタンは "処理中のため削除できません" というtitleを持つ
-    const processingDeleteButton = screen.getByTitle("処理中のため削除できません");
+    const processingDeleteButton =
+      screen.getByTitle("処理中のため削除できません");
     expect(processingDeleteButton).toBeDisabled();
   });
 

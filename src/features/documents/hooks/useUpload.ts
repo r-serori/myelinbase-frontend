@@ -156,14 +156,12 @@ export function useUpload() {
         (item): item is NonNullable<typeof item> => item !== null
       );
 
-      // ★修正箇所: 成功したファイルが1つもない場合はエラーとして扱う
       if (successfulUploads.length === 0) {
         throw new Error("すべてのファイルのアップロードに失敗しました。");
       }
 
       setStatus("success");
 
-      // 3. キャッシュ更新（楽観的UI更新）
       if (successfulUploads.length > 0) {
         qc.setQueriesData<GetDocumentsResponse>(
           { queryKey: queryKeys.documents },
@@ -208,7 +206,7 @@ export function useUpload() {
 
   return {
     upload: (payload: { files: File[]; tags: string[] }) => {
-      upload(payload).catch(console.error);
+      upload(payload).catch(() => {});
     },
     uploadAsync: upload,
     isPending: status === "requesting" || status === "uploading",

@@ -1,6 +1,8 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
 import { FeedbackType } from "@/lib/api/generated/model";
+
 import FeedbackModal from "../FeedbackModal";
 
 // useToastのモック
@@ -26,7 +28,9 @@ describe("FeedbackModal", () => {
   };
 
   it("renders correct title for good feedback", async () => {
-    render(<FeedbackModal {...defaultProps} feedbackType={FeedbackType.GOOD} />);
+    render(
+      <FeedbackModal {...defaultProps} feedbackType={FeedbackType.GOOD} />
+    );
     await waitFor(() => {
       expect(screen.getByText("良い回答のフィードバック")).toBeInTheDocument();
     });
@@ -61,7 +65,9 @@ describe("FeedbackModal", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("自由記述のフィードバック（任意）")).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText("自由記述のフィードバック（任意）")
+      ).toBeInTheDocument();
     });
     const textarea =
       screen.getByPlaceholderText("自由記述のフィードバック（任意）");

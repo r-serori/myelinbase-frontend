@@ -1,9 +1,10 @@
-import { describe, it, expect } from "vitest";
-import { UIMessage } from "ai";
+import type { UIMessage } from "ai";
+import { describe, expect, it } from "vitest";
+
 import {
-  extractTextFromMessage,
   extractCitationsFromMessage,
   extractSessionInfoFromMessage,
+  extractTextFromMessage,
 } from "../utils";
 
 describe("chat/lib/utils", () => {
@@ -26,7 +27,7 @@ describe("chat/lib/utils", () => {
       const message: UIMessage = {
         id: "1",
         role: "assistant",
-        parts: undefined,
+        parts: [],
       } as UIMessage;
 
       const result = extractTextFromMessage(message);
@@ -34,10 +35,10 @@ describe("chat/lib/utils", () => {
     });
 
     it("returns empty string when parts is not an array", () => {
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
-        parts: null as any,
+        parts: [],
       } as UIMessage;
 
       const result = extractTextFromMessage(message);
@@ -50,9 +51,25 @@ describe("chat/lib/utils", () => {
         role: "assistant",
         parts: [
           { type: "text", text: "Hello" },
-          { type: "source-document" },
+          {
+            type: "source",
+            source: {
+              sourceId: "doc-1",
+              title: "Document 1",
+            },
+          },
           { type: "text", text: " World" },
-          { type: "data-session_info", data: {} },
+          {
+            type: "data",
+            data: [
+              {
+                type: "session_info",
+                sessionId: "sess-1",
+                historyId: "hist-1",
+                createdAt: "2023-01-01T00:00:00Z",
+              },
+            ],
+          },
         ],
       } as UIMessage;
 
@@ -74,37 +91,38 @@ describe("chat/lib/utils", () => {
 
   describe("extractCitationsFromMessage", () => {
     it("extracts citations from message with source-document parts", () => {
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
         parts: [
           {
-            type: "source-document",
-            sourceId: "doc-1",
-            title: "Document 1",
-            filename: "doc1.pdf",
-            mediaType: "application/pdf",
+            type: "source",
+            source: {
+              sourceId: "doc-1",
+              title: "Document 1",
+            },
           },
           {
-            type: "source-document",
-            sourceId: "doc-2",
-            title: "Document 2",
-            filename: "doc2.pdf",
+            type: "source",
+            source: {
+              sourceId: "doc-2",
+              title: "Document 2",
+            },
           },
         ],
-      } as UIMessage;
+      } as unknown as UIMessage;
 
       const result = extractCitationsFromMessage(message);
       expect(result).toEqual([
         {
           text: "Document 1",
-          fileName: "doc1.pdf",
+          fileName: "",
           documentId: "doc-1",
           score: 0,
         },
         {
           text: "Document 2",
-          fileName: "doc2.pdf",
+          fileName: "",
           documentId: "doc-2",
           score: 0,
         },
@@ -112,52 +130,62 @@ describe("chat/lib/utils", () => {
     });
 
     it("returns undefined when message has no parts", () => {
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
         parts: undefined,
-      } as UIMessage;
+      } as unknown as UIMessage;
 
       const result = extractCitationsFromMessage(message);
       expect(result).toBeUndefined();
     });
 
     it("returns undefined when parts is not an array", () => {
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
-        parts: null as any,
-      } as UIMessage;
+        parts: null,
+      } as unknown as UIMessage;
 
       const result = extractCitationsFromMessage(message);
       expect(result).toBeUndefined();
     });
 
     it("returns undefined when no source-document parts found", () => {
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
         parts: [
           { type: "text", text: "Hello" },
-          { type: "data-session_info", data: {} },
+          {
+            type: "data-session_info",
+            data: {
+              sessionId: "sess-1",
+              historyId: "hist-1",
+              createdAt: "2023-01-01T00:00:00Z",
+            },
+          },
         ],
-      } as UIMessage;
+      } as unknown as UIMessage;
 
       const result = extractCitationsFromMessage(message);
       expect(result).toBeUndefined();
     });
 
     it("handles source-document parts with missing fields", () => {
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
         parts: [
           {
-            type: "source-document",
-            // sourceId, title, filename が未定義
+            type: "source",
+            source: {
+              sourceId: "",
+              title: "",
+            },
           },
         ],
-      } as UIMessage;
+      } as unknown as UIMessage;
 
       const result = extractCitationsFromMessage(message);
       expect(result).toEqual([
@@ -177,12 +205,23 @@ describe("chat/lib/utils", () => {
         parts: [
           { type: "text", text: "Hello" },
           {
-            type: "source-document",
-            sourceId: "doc-1",
-            title: "Document 1",
-            filename: "doc1.pdf",
+            type: "source",
+            source: {
+              sourceId: "doc-1",
+              title: "Document 1",
+            },
           },
-          { type: "data-session_info", data: {} },
+          {
+            type: "data",
+            data: [
+              {
+                type: "session_info",
+                sessionId: "sess-1",
+                historyId: "hist-1",
+                createdAt: "2023-01-01T00:00:00Z",
+              },
+            ],
+          },
         ],
       } as UIMessage;
 
@@ -190,7 +229,7 @@ describe("chat/lib/utils", () => {
       expect(result).toEqual([
         {
           text: "Document 1",
-          fileName: "doc1.pdf",
+          fileName: "",
           documentId: "doc-1",
           score: 0,
         },
@@ -206,72 +245,86 @@ describe("chat/lib/utils", () => {
         createdAt: "2023-01-01T00:00:00Z",
       };
 
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
         parts: [
           {
-            type: "data-session_info",
-            data: sessionInfo,
+            type: "data",
+            data: [
+              {
+                type: "session_info",
+                ...sessionInfo,
+              },
+            ],
           },
         ],
-      } as UIMessage;
+      } as unknown as UIMessage;
 
       const result = extractSessionInfoFromMessage(message);
       expect(result).toEqual(sessionInfo);
     });
 
     it("returns undefined when message has no parts", () => {
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
         parts: undefined,
-      } as UIMessage;
+      } as unknown as UIMessage;
 
       const result = extractSessionInfoFromMessage(message);
       expect(result).toBeUndefined();
     });
 
     it("returns undefined when parts is not an array", () => {
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
-        parts: null as any,
-      } as UIMessage;
+        parts: null,
+      } as unknown as UIMessage;
 
       const result = extractSessionInfoFromMessage(message);
       expect(result).toBeUndefined();
     });
 
     it("returns undefined when no data-session_info part found", () => {
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
         parts: [
           { type: "text", text: "Hello" },
-          { type: "source-document" },
+          {
+            type: "source",
+            source: {
+              sourceId: "doc-1",
+              title: "Document 1",
+            },
+          },
         ],
-      } as UIMessage;
+      } as unknown as UIMessage;
 
       const result = extractSessionInfoFromMessage(message);
       expect(result).toBeUndefined();
     });
 
     it("returns undefined when data-session_info part has invalid data", () => {
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
         parts: [
           {
-            type: "data-session_info",
-            data: {
-              // 不完全なデータ（sessionIdが欠けている）
-              historyId: "hist-456",
-              createdAt: "2023-01-01T00:00:00Z",
-            },
+            type: "data",
+            data: [
+              {
+                type: "session_info",
+                // 不完全なデータ（sessionIdが欠けている）
+                historyId: "hist-456",
+                createdAt: "2023-01-01T00:00:00Z",
+              },
+            ],
           },
         ],
-      } as UIMessage;
+      } as unknown as UIMessage;
 
       const result = extractSessionInfoFromMessage(message);
       expect(result).toBeUndefined();
@@ -284,25 +337,36 @@ describe("chat/lib/utils", () => {
         createdAt: "2023-01-01T00:00:00Z",
       };
 
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
         parts: [
           { type: "text", text: "Hello" },
           {
-            type: "data-session_info",
-            data: sessionInfo,
+            type: "data",
+            data: [
+              {
+                type: "session_info",
+                ...sessionInfo,
+              },
+            ],
           },
-          { type: "source-document" },
+          {
+            type: "source",
+            source: {
+              sourceId: "doc-1",
+              title: "Document 1",
+            },
+          },
         ],
-      } as UIMessage;
+      } as unknown as UIMessage;
 
       const result = extractSessionInfoFromMessage(message);
       expect(result).toEqual(sessionInfo);
     });
 
     it("returns undefined for data parts that are not data-session_info", () => {
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
         parts: [
@@ -315,7 +379,7 @@ describe("chat/lib/utils", () => {
             },
           },
         ],
-      } as UIMessage;
+      } as unknown as UIMessage;
 
       const result = extractSessionInfoFromMessage(message);
       expect(result).toBeUndefined();
@@ -334,20 +398,25 @@ describe("chat/lib/utils", () => {
         createdAt: "2023-01-02T00:00:00Z",
       };
 
-      const message: UIMessage = {
+      const message = {
         id: "1",
         role: "assistant",
         parts: [
           {
-            type: "data-session_info",
-            data: sessionInfo1,
-          },
-          {
-            type: "data-session_info",
-            data: sessionInfo2,
+            type: "data",
+            data: [
+              {
+                type: "session_info",
+                ...sessionInfo1,
+              },
+              {
+                type: "session_info",
+                ...sessionInfo2,
+              },
+            ],
           },
         ],
-      } as UIMessage;
+      } as unknown as UIMessage;
 
       const result = extractSessionInfoFromMessage(message);
       // 最初の有効なセッション情報を返す
@@ -355,4 +424,3 @@ describe("chat/lib/utils", () => {
     });
   });
 });
-

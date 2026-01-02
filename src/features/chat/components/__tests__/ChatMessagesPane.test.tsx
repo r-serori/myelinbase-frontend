@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import ChatMessagesPane from "../ChatMessagesPane";
 import { createRef } from "react";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
+import ChatMessagesPane from "../ChatMessagesPane";
 
 // モック
 vi.mock("@/features/auth/providers/AuthProvider", () => ({
@@ -11,9 +12,9 @@ vi.mock("@/features/auth/providers/AuthProvider", () => ({
 }));
 
 vi.mock("@/features/chat/hooks/useMessageGrouping", () => ({
-  useMessageGrouping: (messages: any[]) => ({
-    displayItems: messages.map((m) => ({
-      ...m,
+  useMessageGrouping: (messages: unknown[]) => ({
+    displayItems: messages.map((m: unknown) => ({
+      ...(m as Record<string, unknown>),
       versionInfo: { current: 1, total: 1, onPrev: () => {}, onNext: () => {} },
     })),
   }),
@@ -41,6 +42,27 @@ vi.mock("./message/AiMessage", () => ({
 }));
 
 describe("ChatMessagesPane", () => {
+  const mockFeedbackMutation = {
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
+    reset: vi.fn(),
+    status: "idle" as const,
+    isPending: false,
+    isError: false as const,
+    isSuccess: false as const,
+    data: undefined,
+    error: null,
+    variables: undefined,
+    context: undefined,
+    failureCount: 0,
+    failureReason: null,
+    isIdle: true,
+    isPaused: false,
+    submittedAt: 0,
+  } as unknown as ReturnType<
+    typeof import("@/lib/api/generated/default/default").usePostChatFeedback
+  >;
+
   const defaultProps = {
     sessionId: "session-1",
     messages: [],
@@ -51,7 +73,7 @@ describe("ChatMessagesPane", () => {
     streamingAnswer: null,
     latestUserMessageRef: createRef<HTMLDivElement>(),
     onDoSend: vi.fn(),
-    feedbackMutation: { mutate: vi.fn() },
+    feedbackMutation: mockFeedbackMutation,
     bottomPadding: 100,
     formHeight: 60,
     isStreaming: false,
@@ -82,7 +104,7 @@ describe("ChatMessagesPane", () => {
         feedback: "NONE",
       },
     ];
-    // @ts-ignore
+    // @ts-expect-error - messages型が完全に一致しないが、テスト目的で許容
     render(<ChatMessagesPane {...defaultProps} messages={messages} />);
 
     expect(screen.getByText("Hello")).toBeInTheDocument();
@@ -98,15 +120,6 @@ describe("ChatMessagesPane", () => {
       />
     );
 
-    expect(screen.getByText("Pending Query")).toBeInTheDocument();
-    // AI応答はまだ空（streamingAnswerがない場合）
-    // pendingUserMessageがある場合、itemsWithPendingに追加され、AiMessageがレンダリングされる
-    // 実装では、textが空文字列でもAiMessageはレンダリングされる
-    // モックのAiMessageは常にレンダリングされる（textが空でも）
-    // ただし、モックが正しく動作していない可能性があるため、
-    // 実際のレンダリングを確認する代わりに、pendingUserMessageが表示されていることを確認
-    // AiMessageはtextが空でもレンダリングされるが、モックが正しく動作していない可能性がある
-    // このテストでは、pendingUserMessageが表示されていることを確認する
     expect(screen.getByText("Pending Query")).toBeInTheDocument();
   });
 

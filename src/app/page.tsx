@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Orbitron } from "next/font/google"; // ★ 追加: フォントのインポート
+import { Orbitron } from "next/font/google";
 import { useRouter } from "next/navigation";
 import { ArrowRight, MousePointerClick, ShieldCheck } from "lucide-react";
 
@@ -13,7 +13,6 @@ import { Text } from "../components/ui/Text";
 import type { IntroPhase } from "../components/ui/ThreeTitleLogo";
 import ThreeTitleLogo from "../components/ui/ThreeTitleLogo";
 
-// ★ 追加: フォントの設定
 const titleFont = Orbitron({
   weight: ["600", "700"], // 太字を使用
   subsets: ["latin"],

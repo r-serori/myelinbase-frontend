@@ -8,7 +8,6 @@ export function getErrorMessage(code: ErrorCode): string {
     return "予期せぬエラーが発生しました。";
   }
   switch (code) {
-    // --- 汎用 ---
     case ErrorCode.VALIDATION_FAILED:
       return "入力内容に不備があります。確認してください。";
     case ErrorCode.INVALID_PARAMETER:
@@ -22,7 +21,6 @@ export function getErrorMessage(code: ErrorCode): string {
     case ErrorCode.INTERNAL_SERVER_ERROR:
       return "サーバーエラーが発生しました。しばらくしてから再度お試しください。";
 
-    // --- ドキュメント関連 ---
     case ErrorCode.DOCUMENTS_FILE_TOO_LARGE:
       return "ファイルサイズが大きすぎます (上限50MB)。";
     case ErrorCode.DOCUMENTS_UNSUPPORTED_FILE_TYPE:
@@ -44,7 +42,6 @@ export function getErrorMessage(code: ErrorCode): string {
     case ErrorCode.DOCUMENTS_SELECTION_EMPTY:
       return "ファイルが選択されていません。";
 
-    // --- チャット関連 ---
     case ErrorCode.CHAT_QUERY_EMPTY:
       return "質問内容を入力してください。";
     case ErrorCode.CHAT_QUERY_TOO_LONG:

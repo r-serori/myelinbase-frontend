@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+
 import ChatTooltip from "../ChatTooltip";
 
 describe("ChatTooltip", () => {
@@ -52,7 +53,7 @@ describe("ChatTooltip", () => {
     // ただしラッパーdivがなくなるかどうかは実装次第だが、
     // 実装: if (!content) return <>{children}</>;
 
-    const { container } = render(
+    render(
       <ChatTooltip content="">
         <button>Trigger</button>
       </ChatTooltip>

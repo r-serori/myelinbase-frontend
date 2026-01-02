@@ -2,11 +2,6 @@ import { UIMessage } from "ai";
 
 import { SessionInfoPayload, SourceDocument } from "@/lib/api/generated/model";
 
-// =================================================================
-// カスタム型定義と型ガード
-// Vercel AI SDK v3.x UI Message Stream Protocol 準拠
-// =================================================================
-
 type TextPart = {
   type: "text";
   text: string;
@@ -97,10 +92,6 @@ function isSessionInfoItem(
     typeof value.createdAt === "string"
   );
 }
-
-// =================================================================
-// 抽出関数
-// =================================================================
 
 /**
  * メッセージからテキスト部分を抽出して結合する

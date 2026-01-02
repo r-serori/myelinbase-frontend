@@ -2,7 +2,7 @@ import Image from "next/image";
 
 import { Text } from "./Text";
 
-export default function LightLoading({ isLoading }: { isLoading: boolean }) {
+export default function LightLoading() {
   return (
     <div className="flex items-center gap-2">
       <Image
@@ -10,9 +10,9 @@ export default function LightLoading({ isLoading }: { isLoading: boolean }) {
         alt="Myelin Base Logo"
         width={32}
         height={32}
-        className={`object-contain ${isLoading ? "animate-bounce" : ""}`}
+        className="object-contain"
       />
-      <Text variant="xl" color="muted" className="pl-1">
+      <Text variant="xl" color="muted" className="pl-1 thinking-text">
         Loading...
       </Text>
     </div>

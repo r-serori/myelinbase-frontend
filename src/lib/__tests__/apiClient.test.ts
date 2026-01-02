@@ -17,9 +17,11 @@ vi.mock("../env", () => ({
 }));
 
 describe("apiClient", () => {
+  const mockFetch = vi.fn<typeof fetch>();
+
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
+    global.fetch = mockFetch as typeof fetch;
   });
 
   describe("isApiError", () => {
@@ -44,7 +46,7 @@ describe("apiClient", () => {
   describe("apiFetch", () => {
     it("successfully fetches JSON data", async () => {
       const mockData = { id: "1", name: "Test" };
-      (global.fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => mockData,
@@ -64,7 +66,7 @@ describe("apiClient", () => {
     });
 
     it("handles 204 No Content response", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 204,
       });
@@ -74,7 +76,7 @@ describe("apiClient", () => {
     });
 
     it("handles text response when JSON parsing fails", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => {
@@ -88,7 +90,7 @@ describe("apiClient", () => {
     });
 
     it("handles empty text response", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => {
@@ -106,7 +108,7 @@ describe("apiClient", () => {
         errorCode: ErrorCode.VALIDATION_FAILED,
         message: "Validation failed",
       };
-      (global.fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
         json: async () => errorResponse,
@@ -126,7 +128,7 @@ describe("apiClient", () => {
     });
 
     it("throws ApiError for non-ok response without errorCode", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         json: async () => {
@@ -148,7 +150,7 @@ describe("apiClient", () => {
     });
 
     it("throws ApiError for non-ok response with status code only", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
         json: async () => {
@@ -172,7 +174,7 @@ describe("apiClient", () => {
     });
 
     it("skips auth when skipAuth is true", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => ({}),
@@ -193,19 +195,19 @@ describe("apiClient", () => {
       const formData = new FormData();
       formData.append("file", new Blob(["content"]));
 
-      (global.fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => ({}),
       });
 
       await apiFetch("/test", { body: formData });
-      const callArgs = (global.fetch as any).mock.calls[0][1];
-      expect(callArgs.headers).not.toHaveProperty("Content-Type");
+      const callArgs = mockFetch.mock.calls[0]?.[1];
+      expect(callArgs?.headers).not.toHaveProperty("Content-Type");
     });
 
     it("handles absolute URL path", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => ({}),
@@ -219,9 +221,7 @@ describe("apiClient", () => {
     });
 
     it("handles network errors", async () => {
-      (global.fetch as any).mockRejectedValueOnce(
-        new TypeError("Failed to fetch")
-      );
+      mockFetch.mockRejectedValueOnce(new TypeError("Failed to fetch"));
 
       try {
         await apiFetch("/test");
@@ -238,7 +238,7 @@ describe("apiClient", () => {
 
     it("re-throws non-network errors", async () => {
       const customError = new Error("Custom error");
-      (global.fetch as any).mockRejectedValueOnce(customError);
+      mockFetch.mockRejectedValueOnce(customError);
 
       await expect(apiFetch("/test")).rejects.toThrow("Custom error");
       await expect(apiFetch("/test")).rejects.not.toThrow(ApiError);

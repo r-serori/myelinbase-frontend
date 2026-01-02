@@ -60,19 +60,14 @@ export default function ChatContent({
 
   const prevSessionIdRef = useRef<string | undefined>(sessionId);
 
-  // 実際に使用するセッションID
   const effectiveSessionId = localSessionId ?? sessionId;
 
-  // ★ ストリーミング中のデータを保持するref（onFinishで使用）
   const streamingDataRef = useRef<{
     userQuery: string;
     aiResponse: string;
     citations: SourceDocument[];
   } | null>(null);
 
-  // ========================================
-  // Transport設定
-  // ========================================
   const transport = useMemo(() => {
     return new DefaultChatTransport({
       api: `${process.env.NEXT_PUBLIC_API_BASE_URL}/chat/stream`,
@@ -92,9 +87,6 @@ export default function ChatContent({
     });
   }, [effectiveSessionId]);
 
-  // ========================================
-  // useChat
-  // ========================================
   const {
     messages: chatMessages,
     sendMessage,
@@ -105,16 +97,12 @@ export default function ChatContent({
   } = useChat({
     transport,
     onFinish: ({ message }) => {
-      console.log("message", JSON.stringify(message, null, 2));
-      // ★ message.parts からセッション情報を抽出
       const sessionInfo = extractSessionInfoFromMessage(message);
-      console.log("sessionInfo", JSON.stringify(sessionInfo, null, 2));
 
       if (sessionInfo && streamingDataRef.current) {
         const { userQuery, aiResponse, citations } = streamingDataRef.current;
         const { historyId, createdAt } = sessionInfo;
 
-        // ★ 新しいメッセージを作成
         const newMessage: MessageSummary = {
           historyId,
           userQuery,
@@ -124,12 +112,10 @@ export default function ChatContent({
           createdAt,
         };
 
-        // ★ キャッシュを直接更新（GETリクエストなし！）
         queryClient.setQueryData<{ pages: GetSessionMessagesResponse[] }>(
           queryKeys.sessionMessages(effectiveSessionId ?? ""),
           (oldData) => {
             if (!oldData) {
-              // キャッシュがない場合は新規作成
               return {
                 pages: [
                   {
@@ -141,7 +127,6 @@ export default function ChatContent({
               };
             }
 
-            // 最初のページの先頭にメッセージを追加
             const newPages = [...oldData.pages];
             if (newPages.length > 0) {
               newPages[0] = {
@@ -154,22 +139,15 @@ export default function ChatContent({
           }
         );
 
-        // streamingDataRefをクリア
         streamingDataRef.current = null;
       }
 
-      // useChatの状態をクリア
       setMessages([]);
 
-      console.log("localSessionId", localSessionId);
-      console.log("sessionId", sessionId);
-
-      // URLを更新（新規セッションの場合）
       if (localSessionId && localSessionId !== sessionId) {
         router.replace(`/chat?sessionId=${localSessionId}`, { scroll: false });
       }
 
-      // ★ セッション一覧のみ更新（メッセージ一覧はキャッシュ更新済み）
       void queryClient.invalidateQueries({
         queryKey: queryKeys.sessions,
       });
@@ -186,9 +164,6 @@ export default function ChatContent({
 
   const isStreamingAnswer = status === "streaming" || status === "submitted";
 
-  // ========================================
-  // セッション切り替え時のリセット処理
-  // ========================================
   useEffect(() => {
     const prevId = prevSessionIdRef.current;
     const currId = sessionId;
@@ -204,9 +179,6 @@ export default function ChatContent({
     prevSessionIdRef.current = currId;
   }, [sessionId, resetForSessionSwitch, resetForNewSession, setMessages]);
 
-  // ========================================
-  // コンポーネント初期化時にlocalSessionIdを同期
-  // ========================================
   useEffect(() => {
     if (sessionId && !localSessionId) {
       setLocalSessionId(sessionId);
@@ -214,9 +186,6 @@ export default function ChatContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ========================================
-  // エラーハンドリング
-  // ========================================
   useEffect(() => {
     if (chatError) {
       showToast({
@@ -226,9 +195,6 @@ export default function ChatContent({
     }
   }, [chatError, showToast]);
 
-  // ========================================
-  // メッセージ抽出
-  // ========================================
   const latestAiMessage = chatMessages.findLast((m) => m.role === "assistant");
   const latestUserMessage = chatMessages.findLast((m) => m.role === "user");
 
@@ -245,7 +211,6 @@ export default function ChatContent({
     ? extractTextFromMessage(latestUserMessage)
     : null;
 
-  // ★ ストリーミングデータをrefに保存（onFinishで使用）
   useEffect(() => {
     if (isStreamingAnswer && pendingUserMessage) {
       streamingDataRef.current = {
@@ -261,9 +226,6 @@ export default function ChatContent({
     streamingCitations,
   ]);
 
-  // ========================================
-  // 履歴取得
-  // ========================================
   const {
     data,
     isLoading: isQueryLoading,
@@ -297,9 +259,6 @@ export default function ChatContent({
     isFetchingNextPage
   );
 
-  // ========================================
-  // 新規セッション作成時のコールバック
-  // ========================================
   const handleNewSessionCreated = useCallback(
     (newSessionId: string) => {
       setLocalSessionId(newSessionId);
@@ -321,8 +280,6 @@ export default function ChatContent({
     input,
     setInput,
     async ({ body, query }) => {
-      console.log("body", JSON.stringify(body, null, 2));
-      console.log("query", query);
       await sendMessage({ text: query }, { body });
     },
     isStreamingAnswer,
@@ -372,9 +329,6 @@ export default function ChatContent({
     }
   };
 
-  // ========================================
-  // 表示ロジック
-  // ========================================
   const lastDbMessage = messages[messages.length - 1];
   const isDuplicate =
     !!lastDbMessage &&

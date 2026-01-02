@@ -56,7 +56,6 @@ export default function ChatMessagesPane({
   const { user } = useAuth();
   const { displayItems } = useMessageGrouping(messages);
 
-  // Pending Message の追加
   const itemsWithPending = [...displayItems];
   if (pendingUserMessage) {
     itemsWithPending.push({
@@ -77,7 +76,7 @@ export default function ChatMessagesPane({
       className="max-w-3xl w-full mx-auto p-4 space-y-6"
       style={{ paddingBottom: `${bottomPadding}px` }}
     >
-      {isLoading && <LightLoading isLoading={isLoading} />}
+      {isLoading && <LightLoading />}
 
       {!isLoading &&
         itemsWithPending.map((m, index) => {
@@ -85,15 +84,10 @@ export default function ChatMessagesPane({
           const { current, total, onPrev, onNext } = m.versionInfo;
           const isPending = m.historyId === "pending";
 
-          // 生成中かどうかの判定
-          // pending かつ isStreaming なら生成中
-          // または、既存履歴の redo 中なら生成中
           const isGenerating =
             (isStreaming && isPending) ||
             (isStreaming && m.historyId === redoingHistoryId);
 
-          // AI レスポンスの表示内容
-          // Redo中は streamingAnswer を優先表示
           const displayAiResponse =
             m.historyId === redoingHistoryId && isStreaming
               ? streamingAnswer || ""
@@ -101,8 +95,6 @@ export default function ChatMessagesPane({
                 ? streamingAnswer || ""
                 : m.aiResponse || "";
 
-          // ソースドキュメントの表示内容
-          // 生成中は streamingCitations を優先表示（あれば）
           const displayDocuments =
             isGenerating && streamingCitations && streamingCitations.length > 0
               ? streamingCitations
@@ -129,9 +121,7 @@ export default function ChatMessagesPane({
                   }
                 }}
                 onEditAndResend={(newText, historyId) => {
-                  // Pending状態でもストリーミングが停止していれば再送を許可する
                   if (!isPending || !isStreaming) {
-                    // Pendingの場合はhistoryIdがないので新規送信扱いにする
                     const opts = isPending
                       ? undefined
                       : { redoHistoryId: historyId };

@@ -1,4 +1,5 @@
 import { http, HttpResponse } from "msw";
+
 import { env } from "@/lib/env";
 
 const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
