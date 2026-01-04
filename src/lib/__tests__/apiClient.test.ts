@@ -50,7 +50,7 @@ describe("apiClient", () => {
         ok: true,
         status: 200,
         json: async () => mockData,
-      });
+      } as Response);
 
       const result = await apiFetch<typeof mockData>("/test");
       expect(result).toEqual(mockData);
@@ -69,7 +69,7 @@ describe("apiClient", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 204,
-      });
+      } as Response);
 
       const result = await apiFetch("/test");
       expect(result).toEqual({});
@@ -83,7 +83,7 @@ describe("apiClient", () => {
           throw new Error("Not JSON");
         },
         text: async () => "plain text response",
-      });
+      } as unknown as Response);
 
       const result = await apiFetch<string>("/test");
       expect(result).toBe("plain text response");
@@ -97,7 +97,7 @@ describe("apiClient", () => {
           throw new Error("Not JSON");
         },
         text: async () => "",
-      });
+      } as unknown as Response);
 
       const result = await apiFetch("/test");
       expect(result).toEqual({});
@@ -112,7 +112,7 @@ describe("apiClient", () => {
         ok: false,
         status: 400,
         json: async () => errorResponse,
-      });
+      } as Response);
 
       try {
         await apiFetch("/test");
@@ -135,7 +135,7 @@ describe("apiClient", () => {
           throw new Error("Not JSON");
         },
         text: async () => "Server Error",
-      });
+      } as unknown as Response);
 
       try {
         await apiFetch("/test");
@@ -159,7 +159,7 @@ describe("apiClient", () => {
         text: async () => {
           throw new Error("No text");
         },
-      });
+      } as unknown as Response);
 
       try {
         await apiFetch("/test");
@@ -178,7 +178,7 @@ describe("apiClient", () => {
         ok: true,
         status: 200,
         json: async () => ({}),
-      });
+      } as Response);
 
       await apiFetch("/test", { skipAuth: true });
       expect(global.fetch).toHaveBeenCalledWith(
@@ -199,7 +199,7 @@ describe("apiClient", () => {
         ok: true,
         status: 200,
         json: async () => ({}),
-      });
+      } as Response);
 
       await apiFetch("/test", { body: formData });
       const callArgs = mockFetch.mock.calls[0]?.[1];
@@ -211,7 +211,7 @@ describe("apiClient", () => {
         ok: true,
         status: 200,
         json: async () => ({}),
-      });
+      } as Response);
 
       await apiFetch("https://example.com/api/test");
       expect(global.fetch).toHaveBeenCalledWith(

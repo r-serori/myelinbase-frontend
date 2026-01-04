@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import { ErrorCode } from "@/lib/api/generated/model";
@@ -9,11 +9,6 @@ describe("zod-error-map", () => {
   beforeEach(() => {
     // テスト前にエラーマップを登録
     registerZodErrorMap();
-  });
-
-  afterEach(() => {
-    // テスト後にデフォルトのエラーマップに戻す
-    z.setErrorMap(z.defaultErrorMap);
   });
 
   describe("registerZodErrorMap", () => {

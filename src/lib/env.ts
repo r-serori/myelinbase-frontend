@@ -1,24 +1,29 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  // Public variables (exposed to the browser)
-  NEXT_PUBLIC_API_BASE_URL: z.string().default("http://localhost:3000"),
-  NEXT_PUBLIC_API_MOCKING: z.enum(["enabled", "disabled"]).default("disabled"),
+  NEXT_PUBLIC_API_BASE_URL: z.string().url(),
+  NEXT_PUBLIC_CHAT_AGENT_URL: z.string().url().optional(),
 
-  // Server-side variables (optional example)
-  // NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  NEXT_PUBLIC_COGNITO_USER_POOL_ID: z.string().min(1),
+  NEXT_PUBLIC_COGNITO_APP_CLIENT_ID: z.string().min(1),
+  NEXT_PUBLIC_AWS_REGION: z.string().default("ap-northeast-1"),
+
+  NEXT_PUBLIC_API_MOCKING: z.enum(["enabled", "disabled"]).default("disabled"),
 });
 
-// Process environment variables
-// Note: In Next.js, process.env is populated at build time for public vars
-const _env = envSchema.safeParse({
+const parsed = envSchema.safeParse({
   NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  NEXT_PUBLIC_CHAT_AGENT_URL: process.env.NEXT_PUBLIC_CHAT_AGENT_URL,
+  NEXT_PUBLIC_COGNITO_USER_POOL_ID:
+    process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID,
+  NEXT_PUBLIC_COGNITO_APP_CLIENT_ID:
+    process.env.NEXT_PUBLIC_COGNITO_APP_CLIENT_ID,
+  NEXT_PUBLIC_AWS_REGION: process.env.NEXT_PUBLIC_AWS_REGION,
   NEXT_PUBLIC_API_MOCKING: process.env.NEXT_PUBLIC_API_MOCKING,
 });
 
-if (!_env.success) {
-  console.error("❌ Invalid environment variables:", _env.error.format());
+if (!parsed.success) {
   throw new Error("Invalid environment variables");
 }
 
-export const env = _env.data;
+export const env = parsed.data;

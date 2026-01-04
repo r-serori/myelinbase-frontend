@@ -7,18 +7,25 @@ import { ApiError } from "@/lib/apiClient";
 import { handleCommonError } from "../error-handler";
 import { getErrorMessage } from "../error-mapping";
 
+// Mock env
+vi.mock("../env", () => ({
+  env: {
+    NEXT_PUBLIC_API_BASE_URL: "http://localhost:3000",
+  },
+}));
+
 // Mock error-mapping
 vi.mock("../error-mapping", () => ({
   getErrorMessage: vi.fn((code: ErrorCode) => `Mapped error: ${code}`),
 }));
 
 describe("error-handler", () => {
-  let setError: ReturnType<typeof vi.fn>;
-  let showToast: ReturnType<typeof vi.fn>;
+  let setError: (message: string) => void;
+  let showToast: (args: { type: "error"; message: string }) => void;
 
   beforeEach(() => {
-    setError = vi.fn();
-    showToast = vi.fn();
+    setError = vi.fn() as (message: string) => void;
+    showToast = vi.fn() as (args: { type: "error"; message: string }) => void;
     vi.clearAllMocks();
   });
 
