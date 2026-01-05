@@ -1,35 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "aws-amplify/auth";
 
 import AuthLayout from "@/features/auth/components/AuthLayout";
+import { useAuth } from "@/features/auth/providers/AuthProvider";
 import { loginSchema } from "@/features/auth/types/index";
+import Alert from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
+import Spinner from "@/components/ui/Spinner";
+import { Text } from "@/components/ui/Text";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import { handleCommonError } from "@/lib/error-handler";
 
 import { useToast } from "@/providers/ToastProvider";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { user, isLoading } = useAuth();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isLoading && user && process.env.NEXT_PUBLIC_LOGIN_SKIP !== "true") {
+      router.push("/chat");
+    }
+  }, [user, isLoading, router]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const { errors, validateField, validateAll } = useFormValidation(loginSchema);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setGlobalError(null);
+
+    if (!validateAll({ email, password })) {
+      return;
+    }
+
     setLoading(true);
-
     try {
-      loginSchema.parse({ email, password });
-
       if (process.env.NEXT_PUBLIC_LOGIN_SKIP === "true") {
       } else {
         await signIn({ username: email, password });
@@ -38,14 +55,27 @@ export default function LoginPage() {
       router.push("/chat");
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "UserNotFoundException") {
-        setError("ユーザーが見つかりません");
+        setGlobalError("ユーザーが見つかりません");
       } else if (
         err instanceof Error &&
         err.name === "NotAuthorizedException"
       ) {
-        setError("メールアドレスまたはパスワードが正しくありません");
+        setGlobalError("メールアドレスまたはパスワードが正しくありません");
+      } else if (
+        err instanceof Error &&
+        err.name === "ResourceNotFoundException"
+      ) {
+        showToast({
+          type: "error",
+          message: "ログインに失敗しました。",
+        });
       } else {
-        handleCommonError(err, setError, showToast, "ログインに失敗しました");
+        handleCommonError(
+          err,
+          setGlobalError,
+          showToast,
+          "ログインに失敗しました"
+        );
       }
     } finally {
       setLoading(false);
@@ -55,52 +85,71 @@ export default function LoginPage() {
   return (
     <AuthLayout title="ログイン" subtitle="アカウントにサインインしてください">
       <form onSubmit={handleLogin} className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            メールアドレス
-          </label>
+        <FormField
+          label="メールアドレス"
+          error={errors.email}
+          required
+          htmlFor="email"
+          value={email}
+        >
           <Input
+            id="email"
             type="email"
+            autoComplete="email"
             placeholder="name@example.com"
             value={email}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setEmail(e.target.value)
             }
+            onBlur={() => validateField("email", email)}
             disabled={loading}
           />
-        </div>
+        </FormField>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              パスワード
-            </label>
+        <FormField
+          label="パスワード"
+          error={errors.password}
+          required
+          htmlFor="password"
+          value={password}
+          labelExtra={
             <Link
               href="/forgot-password"
               className="text-sm text-muted-foreground hover:text-primary hover:underline"
             >
               パスワードをお忘れですか？
             </Link>
-          </div>
+          }
+        >
           <Input
+            id="password"
             type="password"
+            autoComplete="current-password"
             placeholder="パスワードを入力"
             value={password}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setPassword(e.target.value)
             }
+            onBlur={() => validateField("password", password)}
             disabled={loading}
           />
-        </div>
+        </FormField>
 
-        {error && (
-          <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-100 rounded-md">
-            {error}
-          </div>
+        {globalError && (
+          <Alert color="destructive">
+            <Text variant="sm" color="destructive">
+              {globalError}
+            </Text>
+          </Alert>
         )}
 
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "ログイン中..." : "ログイン"}
+        <Button
+          type="submit"
+          className="w-full flex items-center justify-center gap-2"
+          disabled={loading || !email || !password}
+        >
+          {loading && <Spinner size="3.5" color="white" />}
+          ログイン
         </Button>
 
         <div className="text-center text-sm text-muted-foreground">

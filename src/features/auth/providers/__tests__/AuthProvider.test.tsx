@@ -17,6 +17,12 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
+// Mock ToastProvider
+const mockShowToast = vi.fn();
+vi.mock("@/providers/ToastProvider", () => ({
+  useToast: () => ({ showToast: mockShowToast }),
+}));
+
 // Test Component to consume context
 const TestComponent = () => {
   const { user, isLoading, logout } = useAuth();

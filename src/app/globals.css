@@ -10,12 +10,12 @@
   /* blue-600 */
   --primary-foreground: #ffffff;
 
-  /* --- 成功・完了 (Success) ★追加 --- */
+  /* --- 成功・完了 (Success) --- */
   --success: #16a34a;
   /* green-600 */
   --success-foreground: #ffffff;
 
-  /* --- 注意・警告 (Warning) ★追加 --- */
+  /* --- 注意・警告 (Warning) --- */
   --warning: #f59e0b;
   /* amber-500 */
   --warning-foreground: #ffffff;
@@ -49,11 +49,11 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
 
-  /* ★追加 */
+  /* */
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
 
-  /* ★追加 */
+  /* */
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
 

@@ -23,6 +23,9 @@ export function handleCommonError(
 ) {
   let message = defaultMessage;
 
+  console.log("error", error);
+  console.log("isApiError", isApiError(error));
+
   if (error instanceof ZodError) {
     const code = error.issues[0]?.message as ErrorCode;
     message = getErrorMessage(code);

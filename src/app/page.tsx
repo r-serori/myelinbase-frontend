@@ -5,6 +5,7 @@ import { Orbitron } from "next/font/google";
 import { useRouter } from "next/navigation";
 import { ArrowRight, MousePointerClick, ShieldCheck } from "lucide-react";
 
+import { useAuth } from "@/features/auth/providers/AuthProvider";
 import { cn } from "@/lib/utils";
 
 import { Button } from "../components/ui/Button";
@@ -21,9 +22,9 @@ const titleFont = Orbitron({
 
 export default function TitlePage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [phase, setPhase] = useState<IntroPhase>("INIT");
 
-  // オープニングシーケンス
   useEffect(() => {
     const sequence = async () => {
       // 1. INIT: 三角錐のみ (0s)
@@ -45,7 +46,11 @@ export default function TitlePage() {
   }, []);
 
   const handleLogin = () => {
-    router.push("/login");
+    if (user) {
+      router.push("/chat");
+    } else {
+      router.push("/login");
+    }
   };
 
   return (

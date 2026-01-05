@@ -58,10 +58,9 @@ const ToastItem = ({
   toast: Toast;
   onRemove: (id: string) => void;
 }) => {
-  const [isPaused, setIsPaused] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const timeLeftRef = useRef(toast.duration || 0);
-  const startTimeRef = useRef(Date.now());
+  const startTimeRef = useRef(0);
 
   const colors: Record<ToastType, string> = {
     info: "bg-blue-50 text-blue-700 border-blue-200",
@@ -98,7 +97,6 @@ const ToastItem = ({
   }, [startTimer]);
 
   const handleMouseEnter = () => {
-    setIsPaused(true);
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -108,7 +106,6 @@ const ToastItem = ({
   };
 
   const handleMouseLeave = () => {
-    setIsPaused(false);
     if (toast.duration && toast.duration > 0) {
       startTimer();
     }
@@ -116,7 +113,7 @@ const ToastItem = ({
 
   return (
     <div
-      className={`pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-lg border p-2 shadow-lg transition-all duration-300 animate-in slide-in-from-top-2 fade-in ${
+      className={`pointer-events-auto flex w-full max-w-2xl items-center gap-3 rounded-lg border p-2 shadow-lg transition-all duration-300 animate-in slide-in-from-top-2 fade-in ${
         colors[toast.type]
       }`}
       role="status"

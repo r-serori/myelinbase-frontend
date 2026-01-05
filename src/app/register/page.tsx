@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -11,12 +11,18 @@ import {
 } from "aws-amplify/auth";
 
 import AuthLayout from "@/features/auth/components/AuthLayout";
+import { useAuth } from "@/features/auth/providers/AuthProvider";
 import {
   confirmSignUpSchema,
   registerSchema,
 } from "@/features/auth/types/index";
+import Alert from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
+import Spinner from "@/components/ui/Spinner";
+import { Text } from "@/components/ui/Text";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import { handleCommonError } from "@/lib/error-handler";
 
 import { useToast } from "@/providers/ToastProvider";
@@ -25,43 +31,59 @@ type Step = "REGISTER" | "CONFIRM";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { user, isLoading } = useAuth();
   const { showToast } = useToast();
   const [step, setStep] = useState<Step>("REGISTER");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isLoading && user && process.env.NEXT_PUBLIC_LOGIN_SKIP !== "true") {
+      router.push("/chat");
+    }
+  }, [user, isLoading, router]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
+  const [nickname, setNickname] = useState("");
   const [code, setCode] = useState("");
+
+  const registerValidation = useFormValidation(registerSchema);
+  const confirmValidation = useFormValidation(confirmSignUpSchema);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setGlobalError(null);
+
+    if (!registerValidation.validateAll({ email, password, nickname })) {
+      return;
+    }
+
     setLoading(true);
-
     try {
-      registerSchema.parse({ email, password, username });
-
       await signUp({
         username: email,
         password,
         options: {
           userAttributes: {
             email,
-            nickname: username,
+            nickname,
           },
         },
       });
 
       setStep("CONFIRM");
     } catch (err: unknown) {
-      handleCommonError(
-        err,
-        setError,
-        showToast,
-        "登録中にエラーが発生しました"
-      );
+      if (err instanceof Error && err.name === "UsernameExistsException") {
+        setGlobalError("このメールアドレスは既に登録されています");
+      } else {
+        handleCommonError(
+          err,
+          setGlobalError,
+          showToast,
+          "登録中にエラーが発生しました"
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -69,12 +91,14 @@ export default function RegisterPage() {
 
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setGlobalError(null);
+
+    if (!confirmValidation.validateAll({ code })) {
+      return;
+    }
+
     setLoading(true);
-
     try {
-      confirmSignUpSchema.parse({ code });
-
       await confirmSignUp({
         username: email,
         confirmationCode: code,
@@ -83,26 +107,34 @@ export default function RegisterPage() {
       await signIn({ username: email, password });
       router.push("/profile");
     } catch (err: unknown) {
-      handleCommonError(
-        err,
-        setError,
-        showToast,
-        "確認コードの検証に失敗しました"
-      );
+      if (err instanceof Error && err.name === "CodeMismatchException") {
+        setGlobalError("確認コードが正しくありません");
+      } else if (err instanceof Error && err.name === "ExpiredCodeException") {
+        setGlobalError(
+          "確認コードの有効期限が切れています。再送信してください"
+        );
+      } else {
+        handleCommonError(
+          err,
+          setGlobalError,
+          showToast,
+          "確認コードの検証に失敗しました"
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleResendCode = async () => {
-    setError(null);
+    setGlobalError(null);
     try {
       await resendSignUpCode({ username: email });
       showToast({ type: "success", message: "確認コードを再送信しました" });
     } catch (err: unknown) {
       handleCommonError(
         err,
-        setError,
+        setGlobalError,
         showToast,
         "コードの再送信に失敗しました"
       );
@@ -116,29 +148,41 @@ export default function RegisterPage() {
         subtitle={`${email} に送信された確認コードを入力してください`}
       >
         <form onSubmit={handleConfirm} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              確認コード
-            </label>
+          <FormField
+            label="確認コード"
+            error={confirmValidation.errors.code}
+            required
+            htmlFor="code"
+          >
             <Input
+              id="code"
               type="text"
+              autoComplete="one-time-code"
               placeholder="123456"
               value={code}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setCode(e.target.value)
               }
+              onBlur={() => confirmValidation.validateField("code", code)}
               disabled={loading}
             />
-          </div>
+          </FormField>
 
-          {error && (
-            <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-100 rounded-md">
-              {error}
-            </div>
+          {globalError && (
+            <Alert color="destructive">
+              <Text variant="sm" color="destructive">
+                {globalError}
+              </Text>
+            </Alert>
           )}
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "確認中..." : "アカウントを有効化"}
+          <Button
+            type="submit"
+            className="w-full flex items-center justify-center gap-2"
+            disabled={loading || !code}
+          >
+            {loading && <Spinner size="3.5" color="white" />}
+            アカウントを有効化
           </Button>
 
           <div className="text-center text-sm">
@@ -171,59 +215,86 @@ export default function RegisterPage() {
       subtitle="新しいアカウントを作成して始めましょう"
     >
       <form onSubmit={handleRegister} className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            ユーザー名
-          </label>
+        <FormField
+          label="ユーザー名"
+          error={registerValidation.errors.nickname}
+          required
+          htmlFor="nickname"
+          value={nickname}
+        >
           <Input
+            id="nickname"
             type="text"
+            autoComplete="username"
             placeholder="Taro Yamada"
-            value={username}
+            value={nickname}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setUsername(e.target.value)
+              setNickname(e.target.value)
+            }
+            onBlur={() =>
+              registerValidation.validateField("nickname", nickname)
             }
             disabled={loading}
           />
-        </div>
+        </FormField>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            メールアドレス
-          </label>
+        <FormField
+          label="メールアドレス"
+          error={registerValidation.errors.email}
+          required
+          htmlFor="email"
+        >
           <Input
+            id="email"
             type="email"
+            autoComplete="email"
             placeholder="name@example.com"
             value={email}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setEmail(e.target.value)
             }
+            onBlur={() => registerValidation.validateField("email", email)}
             disabled={loading}
           />
-        </div>
+        </FormField>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            パスワード
-          </label>
+        <FormField
+          label="パスワード"
+          error={registerValidation.errors.password}
+          required
+          htmlFor="password"
+        >
           <Input
+            id="password"
             type="password"
+            autoComplete="new-password"
             placeholder="8文字以上の英数字"
             value={password}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setPassword(e.target.value)
             }
+            onBlur={() =>
+              registerValidation.validateField("password", password)
+            }
             disabled={loading}
           />
-        </div>
+        </FormField>
 
-        {error && (
-          <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-100 rounded-md">
-            {error}
-          </div>
+        {globalError && (
+          <Alert color="destructive">
+            <Text variant="sm" color="destructive">
+              {globalError}
+            </Text>
+          </Alert>
         )}
 
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "作成中..." : "アカウント作成"}
+        <Button
+          type="submit"
+          className="w-full flex items-center justify-center gap-2"
+          disabled={loading || !nickname || !email || !password}
+        >
+          {loading && <Spinner size="3.5" color="white" />}
+          アカウント作成
         </Button>
 
         <div className="text-center text-sm text-muted-foreground">

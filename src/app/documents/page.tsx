@@ -29,7 +29,6 @@ function Main() {
   const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
   const [detailId, setDetailId] = useState<string | null>(null);
 
-  // 一覧の取得
   const { data, isLoading, refetch, isError, error } = useDocuments();
   useQueryErrorToast(isError, error);
 
@@ -37,7 +36,6 @@ function Main() {
     data?.documents
   );
 
-  // フィルタリングロジック
   const {
     filters,
     applied,
@@ -48,11 +46,9 @@ function Main() {
     hasConditions,
   } = useDocumentFilters(data?.documents ?? []);
 
-  // 削除アクションロジック
   const { state: deleteState, actions: deleteActions } =
     useDocumentDeleteActions(refetch);
 
-  // 削除対象のドキュメント取得（確認ダイアログ用）
   const targetDocument = (data?.documents ?? []).find(
     (d) => d.documentId === deleteState.confirmTargetId
   );
@@ -61,7 +57,6 @@ function Main() {
     <div className="h-full overflow-hidden">
       <div className="p-4 space-y-2 mx-auto md:max-w-6xl h-full flex flex-col">
         <div className="flex md:flex-row flex-col justify-between gap-2">
-          {/* 検索バー */}
           <DocumentSearchBar
             filters={filters}
             applied={applied}
@@ -110,7 +105,6 @@ function Main() {
           </div>
         </div>
 
-        {/* --- アップロードボタン --- */}
         <div className="space-y-3">
           <Text
             variant="sm"
@@ -138,7 +132,6 @@ function Main() {
           )}
         </div>
 
-        {/* --- ドキュメント一覧 --- */}
         <DocumentTable
           hasPendingDocs={hasPendingDocs}
           pendingCount={pendingCount}

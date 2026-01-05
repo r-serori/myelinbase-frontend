@@ -3,6 +3,8 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
 
+import { useToast } from "@/providers/ToastProvider";
+
 interface User {
   userId: string;
   username: string;
@@ -28,6 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { showToast } = useToast();
 
   useEffect(() => {
     checkUser();
@@ -64,9 +67,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const logout = async () => {
-    await signOut();
-    setUser(null);
-    router.push("/login");
+    try {
+      await signOut();
+      setUser(null);
+      router.push("/login");
+    } catch {
+      showToast({ type: "error", message: "ログアウトに失敗しました" });
+    }
   };
 
   return (

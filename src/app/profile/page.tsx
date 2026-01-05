@@ -22,14 +22,17 @@ import {
   changePasswordSchema,
   updateProfileSchema,
 } from "@/features/auth/types/index";
+import Alert from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
+import Spinner from "@/components/ui/Spinner";
+import { Text } from "@/components/ui/Text";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import { handleCommonError } from "@/lib/error-handler";
 
-import Alert from "../../components/ui/Alert";
-import { Modal } from "../../components/ui/Modal";
-import { Text } from "../../components/ui/Text";
-import { useToast } from "../../providers/ToastProvider";
+import { useToast } from "@/providers/ToastProvider";
 
 export default function ProfilePage() {
   return (
@@ -53,16 +56,19 @@ function ProfileContent() {
 
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-  const [profileValidateMessage, setProfileValidateMessage] = useState<
-    string | null
-  >(null);
-  const [passwordValidateMessage, setPasswordValidateMessage] = useState<
-    string | null
-  >(null);
+  const [profileGlobalError, setProfileGlobalError] = useState<string | null>(
+    null
+  );
+  const [passwordGlobalError, setPasswordGlobalError] = useState<string | null>(
+    null
+  );
 
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+
+  const profileValidation = useFormValidation(updateProfileSchema);
+  const passwordValidation = useFormValidation(changePasswordSchema);
 
   useEffect(() => {
     async function loadAttributes() {
@@ -90,28 +96,32 @@ function ProfileContent() {
       }
     }
     loadAttributes();
-  }, [user]);
+  }, [showToast, user]);
 
   const startEditingNickname = () => {
     setFormNickname(nickname);
     setIsEditingNickname(true);
-    setProfileValidateMessage(null);
+    setProfileGlobalError(null);
+    profileValidation.clearErrors();
   };
 
   const cancelEditingNickname = () => {
     setIsEditingNickname(false);
     setFormNickname(nickname);
-    setProfileValidateMessage(null);
+    setProfileGlobalError(null);
+    profileValidation.clearErrors();
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setProfileValidateMessage(null);
+    setProfileGlobalError(null);
+
+    if (!profileValidation.validateAll({ nickname: formNickname })) {
+      return;
+    }
+
     setLoading(true);
-
     try {
-      updateProfileSchema.parse({ nickname: formNickname });
-
       await updateUserAttributes({
         userAttributes: {
           nickname: formNickname,
@@ -125,7 +135,7 @@ function ProfileContent() {
     } catch (err: unknown) {
       handleCommonError(
         err,
-        setProfileValidateMessage,
+        setProfileGlobalError,
         showToast,
         "プロフィールの更新に失敗しました"
       );
@@ -136,15 +146,20 @@ function ProfileContent() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPasswordValidateMessage(null);
-    setLoading(true);
+    setPasswordGlobalError(null);
 
-    try {
-      changePasswordSchema.parse({
+    if (
+      !passwordValidation.validateAll({
         oldPassword,
         newPassword,
         confirmNewPassword,
-      });
+      })
+    ) {
+      return;
+    }
+
+    setLoading(true);
+    try {
       await updatePassword({
         oldPassword,
         newPassword,
@@ -156,10 +171,11 @@ function ProfileContent() {
       setNewPassword("");
       setConfirmNewPassword("");
       setIsChangingPassword(false);
+      passwordValidation.clearErrors();
     } catch (err: unknown) {
       handleCommonError(
         err,
-        setPasswordValidateMessage,
+        setPasswordGlobalError,
         showToast,
         "パスワードの変更に失敗しました"
       );
@@ -171,7 +187,6 @@ function ProfileContent() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="container max-w-2xl mx-auto py-4 px-4">
-        {/* Header Section */}
         <div className="flex flex-col items-center space-y-3 text-center">
           <div className="size-12 rounded-full bg-secondary flex items-center justify-center border-2 border-border shadow-sm">
             <UserIcon className="size-6 text-muted-foreground" />
@@ -220,7 +235,6 @@ function ProfileContent() {
         </Modal>
 
         <div className="space-y-6 mt-2">
-          {/* Profile Settings Card */}
           <div className="bg-white border border-border/60 rounded-xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-4 border-b pb-2">
               <div className="flex items-center gap-3">
@@ -235,7 +249,7 @@ function ProfileContent() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Text variant="sm" as="span">
+                <Text variant="md" as="span">
                   メールアドレス
                 </Text>
                 <Text
@@ -247,23 +261,37 @@ function ProfileContent() {
               </div>
 
               <div>
-                <Text variant="sm" as="label">
-                  ニックネーム
+                <Text variant="md" as="label">
+                  ユーザー名
                 </Text>
                 {isEditingNickname ? (
                   <form onSubmit={handleUpdateProfile} className="space-y-3">
-                    <Input
-                      size="full"
-                      value={formNickname}
-                      onChange={(e) => setFormNickname(e.target.value)}
-                      placeholder="ニックネームを入力"
-                      autoFocus
-                    />
+                    <FormField
+                      label=""
+                      error={profileValidation.errors.nickname}
+                      htmlFor="nickname"
+                    >
+                      <Input
+                        id="nickname"
+                        size="full"
+                        autoComplete="nickname"
+                        value={formNickname}
+                        onChange={(e) => setFormNickname(e.target.value)}
+                        onBlur={() =>
+                          profileValidation.validateField(
+                            "nickname",
+                            formNickname
+                          )
+                        }
+                        placeholder="ユーザー名を入力"
+                        autoFocus
+                      />
+                    </FormField>
 
-                    {profileValidateMessage && (
+                    {profileGlobalError && (
                       <Alert color="destructive">
                         <Text variant="sm" color="destructive">
-                          {profileValidateMessage}
+                          {profileGlobalError}
                         </Text>
                       </Alert>
                     )}
@@ -281,13 +309,15 @@ function ProfileContent() {
                       <Button
                         type="submit"
                         size="xs"
+                        className="flex items-center gap-2"
                         disabled={
                           loading ||
                           formNickname.trim() === "" ||
                           formNickname === nickname
                         }
                       >
-                        {loading ? "保存中..." : "保存"}
+                        {loading && <Spinner size="3" color="white" />}
+                        保存
                       </Button>
                     </div>
                   </form>
@@ -309,7 +339,6 @@ function ProfileContent() {
             </div>
           </div>
 
-          {/* Password Settings Card */}
           <div className="bg-background border border-border/60 rounded-xl p-4 shadow-sm">
             <div className="flex items-center justify-between pb-2">
               <div className="flex items-center gap-3">
@@ -346,51 +375,81 @@ function ProfileContent() {
                   onSubmit={handleChangePassword}
                   className="space-y-4 pt-4"
                 >
-                  <div className="space-y-2">
-                    <Text variant="sm" as="label">
-                      現在のパスワード
-                    </Text>
+                  <FormField
+                    label="現在のパスワード"
+                    error={passwordValidation.errors.oldPassword}
+                    required
+                    htmlFor="oldPassword"
+                  >
                     <Input
+                      id="oldPassword"
                       size="full"
                       type="password"
+                      autoComplete="current-password"
                       value={oldPassword}
                       onChange={(e) => setOldPassword(e.target.value)}
+                      onBlur={() =>
+                        passwordValidation.validateField(
+                          "oldPassword",
+                          oldPassword
+                        )
+                      }
                       placeholder="現在のパスワードを入力"
                     />
-                  </div>
+                  </FormField>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Text variant="sm" as="label">
-                        新しいパスワード
-                      </Text>
+                    <FormField
+                      label="新しいパスワード"
+                      error={passwordValidation.errors.newPassword}
+                      required
+                      htmlFor="newPassword"
+                    >
                       <Input
+                        id="newPassword"
                         size="full"
                         type="password"
+                        autoComplete="new-password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
+                        onBlur={() =>
+                          passwordValidation.validateField(
+                            "newPassword",
+                            newPassword
+                          )
+                        }
                         placeholder="8文字以上の英数字"
                       />
-                    </div>
+                    </FormField>
 
-                    <div className="space-y-2">
-                      <Text variant="sm" as="label">
-                        確認用入力
-                      </Text>
+                    <FormField
+                      label="確認用入力"
+                      error={passwordValidation.errors.confirmNewPassword}
+                      required
+                      htmlFor="confirmNewPassword"
+                    >
                       <Input
+                        id="confirmNewPassword"
                         size="full"
                         type="password"
+                        autoComplete="new-password"
                         value={confirmNewPassword}
                         onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        onBlur={() =>
+                          passwordValidation.validateField(
+                            "confirmNewPassword",
+                            confirmNewPassword
+                          )
+                        }
                         placeholder="もう一度入力"
                       />
-                    </div>
+                    </FormField>
                   </div>
 
-                  {passwordValidateMessage && (
+                  {passwordGlobalError && (
                     <Alert color="destructive">
                       <Text variant="sm" color="destructive">
-                        {passwordValidateMessage}
+                        {passwordGlobalError}
                       </Text>
                     </Alert>
                   )}
@@ -405,14 +464,26 @@ function ProfileContent() {
                         setOldPassword("");
                         setNewPassword("");
                         setConfirmNewPassword("");
-                        setPasswordValidateMessage(null);
+                        setPasswordGlobalError(null);
+                        passwordValidation.clearErrors();
                       }}
                       disabled={loading}
                     >
                       キャンセル
                     </Button>
-                    <Button type="submit" size="xs" disabled={loading}>
-                      {loading ? "更新中..." : "パスワードを変更"}
+                    <Button
+                      type="submit"
+                      size="xs"
+                      className="flex items-center gap-2"
+                      disabled={
+                        loading ||
+                        !oldPassword ||
+                        !newPassword ||
+                        !confirmNewPassword
+                      }
+                    >
+                      {loading && <Spinner size="3" color="white" />}
+                      パスワードを変更
                     </Button>
                   </div>
                 </form>

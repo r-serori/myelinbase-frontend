@@ -7,8 +7,6 @@ const envSchema = z.object({
   NEXT_PUBLIC_COGNITO_USER_POOL_ID: z.string().min(1),
   NEXT_PUBLIC_COGNITO_APP_CLIENT_ID: z.string().min(1),
   NEXT_PUBLIC_AWS_REGION: z.string().default("ap-northeast-1"),
-
-  NEXT_PUBLIC_API_MOCKING: z.enum(["enabled", "disabled"]).default("disabled"),
 });
 
 const parsed = envSchema.safeParse({
@@ -19,7 +17,6 @@ const parsed = envSchema.safeParse({
   NEXT_PUBLIC_COGNITO_APP_CLIENT_ID:
     process.env.NEXT_PUBLIC_COGNITO_APP_CLIENT_ID,
   NEXT_PUBLIC_AWS_REGION: process.env.NEXT_PUBLIC_AWS_REGION,
-  NEXT_PUBLIC_API_MOCKING: process.env.NEXT_PUBLIC_API_MOCKING,
 });
 
 if (!parsed.success) {

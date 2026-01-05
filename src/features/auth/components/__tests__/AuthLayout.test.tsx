@@ -13,7 +13,7 @@ describe("AuthLayout", () => {
 
     expect(screen.getByText("Test Title")).toBeInTheDocument();
     expect(screen.getByText("Child Form")).toBeInTheDocument();
-    expect(screen.getByText("Myelin Base")).toBeInTheDocument();
+    expect(screen.getByAltText("Myelin Base")).toBeInTheDocument();
   });
 
   it("renders subtitle when provided", () => {

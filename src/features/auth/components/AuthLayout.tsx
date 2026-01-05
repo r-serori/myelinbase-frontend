@@ -1,6 +1,6 @@
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { BrainCircuit } from "lucide-react";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -18,12 +18,12 @@ export default function AuthLayout({
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center text-center">
           <Link href="/" className="flex items-center gap-2 mb-6 group">
-            <div className="p-2 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors">
-              <BrainCircuit className="w-8 h-8 text-primary" />
-            </div>
-            <span className="text-2xl font-bold tracking-tight">
-              Myelin Base
-            </span>
+            <Image
+              src="/images/icon.png"
+              alt="Myelin Base"
+              width={56}
+              height={56}
+            />
           </Link>
           <h2 className="text-2xl font-bold tracking-tight text-foreground">
             {title}
