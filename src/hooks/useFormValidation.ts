@@ -39,6 +39,12 @@ export function useFormValidation<T extends Record<string, unknown>>(
             ...prev,
             [field]: fieldError.message,
           }));
+        } else {
+          setErrors((prev) => {
+            const next = { ...prev };
+            delete next[field];
+            return next;
+          });
         }
       }
       return false;
