@@ -31,8 +31,6 @@ export type FormFieldProps = {
   className?: string;
   /** ラベルの追加要素（パスワードを忘れた？リンクなど） */
   labelExtra?: React.ReactNode;
-  /** フォーム要素のvalue属性 */
-  value?: string;
 };
 
 export function FormField({
@@ -43,7 +41,6 @@ export function FormField({
   htmlFor,
   className = "",
   labelExtra,
-  value,
 }: FormFieldProps) {
   return (
     <div className={`space-y-2 ${className}`}>
@@ -53,9 +50,7 @@ export function FormField({
           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
         >
           {label}
-          {required && value === "" && (
-            <span className="text-destructive ml-1">*</span>
-          )}
+          {required && <span className="text-destructive ml-1">*</span>}
         </label>
         {labelExtra}
       </div>

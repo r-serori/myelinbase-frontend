@@ -156,6 +156,7 @@ export default function RegisterPage() {
           >
             <Input
               id="code"
+              name="code"
               type="text"
               autoComplete="one-time-code"
               placeholder="123456"
@@ -220,12 +221,12 @@ export default function RegisterPage() {
           error={registerValidation.errors.nickname}
           required
           htmlFor="nickname"
-          value={nickname}
         >
           <Input
             id="nickname"
+            name="name"
             type="text"
-            autoComplete="username"
+            autoComplete="name"
             placeholder="Taro Yamada"
             value={nickname}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -246,6 +247,7 @@ export default function RegisterPage() {
         >
           <Input
             id="email"
+            name="username"
             type="email"
             autoComplete="email"
             placeholder="name@example.com"
@@ -266,6 +268,7 @@ export default function RegisterPage() {
         >
           <Input
             id="password"
+            name="password"
             type="password"
             autoComplete="new-password"
             placeholder="8文字以上の英数字"

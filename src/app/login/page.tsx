@@ -90,10 +90,10 @@ export default function LoginPage() {
           error={errors.email}
           required
           htmlFor="email"
-          value={email}
         >
           <Input
             id="email"
+            name="username"
             type="email"
             autoComplete="email"
             placeholder="name@example.com"
@@ -111,7 +111,6 @@ export default function LoginPage() {
           error={errors.password}
           required
           htmlFor="password"
-          value={password}
           labelExtra={
             <Link
               href="/forgot-password"
@@ -124,9 +123,9 @@ export default function LoginPage() {
           <Input
             id="password"
             type="password"
-            autoComplete="current-password"
+            name="password"
+            autoComplete="new-password"
             placeholder="パスワードを入力"
-            value={password}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setPassword(e.target.value)
             }

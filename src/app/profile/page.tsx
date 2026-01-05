@@ -274,7 +274,8 @@ function ProfileContent() {
                       <Input
                         id="nickname"
                         size="full"
-                        autoComplete="nickname"
+                        name="name"
+                        autoComplete="name"
                         value={formNickname}
                         onChange={(e) => setFormNickname(e.target.value)}
                         onBlur={() =>
@@ -383,6 +384,7 @@ function ProfileContent() {
                   >
                     <Input
                       id="oldPassword"
+                      name="oldPassword"
                       size="full"
                       type="password"
                       autoComplete="current-password"
@@ -407,6 +409,7 @@ function ProfileContent() {
                     >
                       <Input
                         id="newPassword"
+                        name="newPassword"
                         size="full"
                         type="password"
                         autoComplete="new-password"
@@ -430,6 +433,7 @@ function ProfileContent() {
                     >
                       <Input
                         id="confirmNewPassword"
+                        name="confirmNewPassword"
                         size="full"
                         type="password"
                         autoComplete="new-password"
