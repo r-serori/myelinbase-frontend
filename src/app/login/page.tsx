@@ -28,6 +28,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && user && process.env.NEXT_PUBLIC_LOGIN_SKIP !== "true") {
+      console.log(
+        "process.env.NEXT_PUBLIC_LOGIN_SKIP",
+        process.env.NEXT_PUBLIC_LOGIN_SKIP
+      );
       router.push("/chat");
     }
   }, [user, isLoading, router]);
@@ -61,6 +65,11 @@ export default function LoginPage() {
         err.name === "NotAuthorizedException"
       ) {
         setGlobalError("メールアドレスまたはパスワードが正しくありません");
+      } else if (
+        err instanceof Error &&
+        err.name === "UserAlreadyAuthenticatedException"
+      ) {
+        router.push("/chat");
       } else if (
         err instanceof Error &&
         err.name === "ResourceNotFoundException"
