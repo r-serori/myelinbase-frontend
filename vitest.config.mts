@@ -12,5 +12,13 @@ export default defineConfig({
       "@": resolve(__dirname, "./src"),
     },
     include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    env: {
+      NEXT_PUBLIC_API_BASE_URL: "http://localhost:3000",
+      NEXT_PUBLIC_CHAT_AGENT_URL: "http://localhost:3000/chat",
+      NEXT_PUBLIC_COGNITO_USER_POOL_ID: "test-user-pool-id",
+      NEXT_PUBLIC_COGNITO_APP_CLIENT_ID: "test-app-client-id",
+      NEXT_PUBLIC_AWS_REGION: "ap-northeast-1",
+      NEXT_PUBLIC_API_MOCKING: "enabled",
+    },
   },
 });
