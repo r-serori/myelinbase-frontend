@@ -21,7 +21,7 @@ import { useToast } from "@/providers/ToastProvider";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, checkUser } = useAuth();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       if (process.env.NEXT_PUBLIC_LOGIN_SKIP === "true") {
-        router.push("/chat");
+        router.push("/documents");
       } else {
         await signIn({ username: email, password });
       }
@@ -64,7 +64,8 @@ export default function LoginPage() {
         err instanceof Error &&
         err.name === "UserAlreadyAuthenticatedException"
       ) {
-        router.push("/chat");
+        await checkUser();
+        router.push("/documents");
       } else if (
         err instanceof Error &&
         err.name === "ResourceNotFoundException"
