@@ -105,7 +105,6 @@ export default function RegisterPage() {
       });
 
       await signIn({ username: email, password });
-      router.push("/profile");
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "CodeMismatchException") {
         setGlobalError("確認コードが正しくありません");

@@ -28,11 +28,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && user && process.env.NEXT_PUBLIC_LOGIN_SKIP !== "true") {
-      console.log(
-        "process.env.NEXT_PUBLIC_LOGIN_SKIP",
-        process.env.NEXT_PUBLIC_LOGIN_SKIP
-      );
-      router.push("/chat");
+      router.push("/documents");
     }
   }, [user, isLoading, router]);
 
@@ -52,11 +48,10 @@ export default function LoginPage() {
     setLoading(true);
     try {
       if (process.env.NEXT_PUBLIC_LOGIN_SKIP === "true") {
+        router.push("/chat");
       } else {
         await signIn({ username: email, password });
       }
-
-      router.push("/chat");
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "UserNotFoundException") {
         setGlobalError("ユーザーが見つかりません");
