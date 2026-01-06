@@ -23,6 +23,18 @@ describe("getErrorMessage", () => {
     );
   });
 
+  it("returns message for DOCUMENTS_DUPLICATE_CONTENT (backend duplicate)", () => {
+    expect(getErrorMessage("DOCUMENTS_DUPLICATE_CONTENT")).toBe(
+      "同じ内容のファイルが既にアップロードされています。"
+    );
+  });
+
+  it("returns message for DOCUMENTS_DUPLICATE_IN_SELECTION (frontend duplicate)", () => {
+    expect(getErrorMessage("DOCUMENTS_DUPLICATE_IN_SELECTION")).toBe(
+      "選択したファイルの中に同じ内容のファイルがあります。"
+    );
+  });
+
   it("falls back to server message if error code is unknown", () => {
     // 実装では unknown code の場合は default message を返す
     expect(getErrorMessage("UNKNOWN_CODE" as ErrorCode)).toBe(

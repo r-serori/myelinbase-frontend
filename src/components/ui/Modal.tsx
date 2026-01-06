@@ -102,7 +102,7 @@ export function ModalHeader({
   return (
     <div
       className={cn(
-        "flex items-center justify-between border-b border-gray-100 shrink-0 px-4 py-2",
+        "flex items-center justify-between border-b border-gray-100 shrink-0 px-4 py-1",
         className
       )}
     >
@@ -133,7 +133,7 @@ export function ModalBody({
   className?: string;
 }) {
   return (
-    <div className={cn("overflow-y-auto p-4 flex-1", className)}>
+    <div className={cn("overflow-y-auto p-3 flex-1", className)}>
       {children}
     </div>
   );

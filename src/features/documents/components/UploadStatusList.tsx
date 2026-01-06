@@ -80,7 +80,10 @@ export default function UploadStatusList({
                 <XCircle className="size-4 text-destructive shrink-0" />
               );
               // 重複コンテンツエラーの場合は特別なメッセージを表示
-              if (status.errorCode === "DOCUMENTS_DUPLICATE_CONTENT") {
+              if (
+                status.errorCode === "DOCUMENTS_DUPLICATE_CONTENT" ||
+                status.errorCode === "DOCUMENTS_DUPLICATE_IN_SELECTION"
+              ) {
                 statusText = "重複（既存ファイルと同内容）";
               } else {
                 statusText = "失敗";

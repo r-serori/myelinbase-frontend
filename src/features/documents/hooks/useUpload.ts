@@ -27,6 +27,12 @@ export interface UploadProgress {
   errorCode?: string; // エラーコード（重複検知時など）
 }
 
+interface UploadPayload {
+  files: File[];
+  tags: string[];
+  fileHashes?: Map<string, string>; // 事前計算済みハッシュ（オプション）
+}
+
 export function useUpload() {
   const qc = useQueryClient();
   const [status, setStatus] = useState<UploadStatus>("idle");
@@ -36,7 +42,7 @@ export function useUpload() {
 
   const uploadRequestMutation = usePostDocumentsUpload();
 
-  const upload = async (payload: { files: File[]; tags: string[] }) => {
+  const upload = async (payload: UploadPayload) => {
     try {
       setStatus("requesting");
 
@@ -51,23 +57,33 @@ export function useUpload() {
       });
       setUploadProgress(initialProgress);
 
-      // 各ファイルのハッシュを並列計算（重複コンテンツ検知用）
-      const fileHashes = await Promise.all(
-        payload.files.map(async (f) => {
-          try {
-            const hash = await computeFileHash(f);
-            return { name: f.name, hash };
-          } catch {
-            // ハッシュ計算に失敗した場合はnullを返す（オプショナルなのでアップロードは続行）
-            return { name: f.name, hash: null };
-          }
-        })
-      );
+      // ハッシュマップを構築（事前計算済みがあれば使用、なければ計算）
+      let hashMap: Map<string, string | null>;
 
-      const hashMap = new Map<string, string | null>();
-      fileHashes.forEach(({ name, hash }) => {
-        hashMap.set(name, hash);
-      });
+      if (payload.fileHashes && payload.fileHashes.size > 0) {
+        // 事前計算済みハッシュを使用
+        hashMap = new Map();
+        payload.fileHashes.forEach((hash, name) => {
+          hashMap.set(name, hash);
+        });
+      } else {
+        // ハッシュを新規計算
+        const fileHashes = await Promise.all(
+          payload.files.map(async (f) => {
+            try {
+              const hash = await computeFileHash(f);
+              return { name: f.name, hash };
+            } catch {
+              return { name: f.name, hash: null };
+            }
+          })
+        );
+
+        hashMap = new Map();
+        fileHashes.forEach(({ name, hash }) => {
+          hashMap.set(name, hash);
+        });
+      }
 
       const requestBody: UploadRequestRequest = {
         files: payload.files.map((f) => ({
@@ -228,7 +244,7 @@ export function useUpload() {
   };
 
   return {
-    upload: (payload: { files: File[]; tags: string[] }) => {
+    upload: (payload: UploadPayload) => {
       upload(payload).catch(() => {});
     },
     uploadAsync: upload,

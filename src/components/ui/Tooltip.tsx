@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { CircleQuestionMark } from "lucide-react";
+import { CircleQuestionMark, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+
+import { Button } from "./Button";
 
 function Tooltip({
   children,
@@ -27,7 +29,7 @@ function Tooltip({
         <CircleQuestionMark
           className={cn(
             `size-${circleSize}`,
-            "text-primary hover:text-primary/60"
+            `text-primary ${showTooltip ? "text-primary/60" : "hover:text-primary/60"}`
           )}
         />
       </button>
@@ -38,6 +40,14 @@ function Tooltip({
             position
           )}
         >
+          <Button
+            variant="iconSmall"
+            size="iconSmall"
+            onClick={() => setShowTooltip(false)}
+            className="absolute top-2 right-3 cursor-pointer"
+          >
+            <X className="size-4" />
+          </Button>
           {children}
         </div>
       )}

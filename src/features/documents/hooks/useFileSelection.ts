@@ -5,10 +5,19 @@ import {
   ALLOWED_EXTENSIONS,
   MAX_FILES,
 } from "@/features/documents/config/document-constants";
+import { computeFileHash } from "@/lib/utils";
 
 interface ProcessingProgress {
   current: number;
   total: number;
+}
+
+// 重複情報を含むファイル情報
+export interface FileWithDuplicateInfo {
+  file: File;
+  hash: string | null;
+  isDuplicate: boolean;
+  duplicateOf: string | null; // 重複元のファイル名
 }
 
 export function useFileSelection() {
@@ -21,6 +30,12 @@ export function useFileSelection() {
     total: 0,
   });
 
+  // 重複検出用のstate
+  const [fileHashes, setFileHashes] = useState<Map<string, string>>(new Map());
+  const [duplicateFiles, setDuplicateFiles] = useState<
+    Map<string, string | null>
+  >(new Map()); // fileName -> duplicateOf
+
   useEffect(() => {
     return () => {
       previews.forEach((p) => {
@@ -32,11 +47,19 @@ export function useFileSelection() {
   }, [previews]);
 
   // 単一ファイルのプレビュー生成
-  async function buildPreviewForFile(file: File): Promise<Preview | null> {
+  async function buildPreviewForFile(
+    file: File,
+    duplicateOf: string | null
+  ): Promise<Preview | null> {
     const mime = file.type || "application/octet-stream";
     const isAllowed = ALLOWED_EXTENSIONS.some((ext) =>
       file.name.toLowerCase().endsWith(ext)
     );
+
+    const basePreview = {
+      isDuplicate: duplicateOf !== null,
+      duplicateOf,
+    };
 
     if (
       mime.startsWith("text/") ||
@@ -52,6 +75,7 @@ export function useFileSelection() {
           size: file.size,
           mime,
           snippet: text.slice(0, 2000),
+          ...basePreview,
         };
       } catch {
         return {
@@ -60,18 +84,29 @@ export function useFileSelection() {
           size: file.size,
           mime,
           snippet: "",
+          ...basePreview,
         };
       }
     } else if (mime === "application/pdf") {
       const url = URL.createObjectURL(file);
-      return { kind: "pdf", name: file.name, size: file.size, mime, url };
+      return {
+        kind: "pdf",
+        name: file.name,
+        size: file.size,
+        mime,
+        url,
+        ...basePreview,
+      };
     }
 
     return null;
   }
 
   // 複数ファイルのプレビュー生成（最初のMAX_PREVIEW_COUNT件のみ詳細）
-  async function buildPreviews(files: File[]) {
+  async function buildPreviews(
+    files: File[],
+    duplicatesMap: Map<string, string | null>
+  ) {
     const MAX_PREVIEW_COUNT = 20;
     const out: Preview[] = [];
 
@@ -79,7 +114,8 @@ export function useFileSelection() {
       const file = files[i];
 
       if (i < MAX_PREVIEW_COUNT) {
-        const preview = await buildPreviewForFile(file);
+        const duplicateOf = duplicatesMap.get(file.name) ?? null;
+        const preview = await buildPreviewForFile(file, duplicateOf);
         if (preview) {
           out.push(preview);
         }
@@ -119,6 +155,51 @@ export function useFileSelection() {
     if (file.size === 0) return false;
     // 許可された拡張子かチェック
     return ALLOWED_EXTENSIONS.some((ext) => name.endsWith(ext));
+  }
+
+  // 重複検出を行う
+  async function detectDuplicates(
+    files: File[],
+    existingHashes: Map<string, string>
+  ): Promise<{
+    newHashes: Map<string, string>;
+    duplicates: Map<string, string | null>;
+  }> {
+    const newHashes = new Map(existingHashes);
+    const duplicates = new Map<string, string | null>();
+
+    // ハッシュ → 最初に登場したファイル名
+    const hashToFirstFileName = new Map<string, string>();
+
+    // 既存のハッシュからマップを構築
+    existingHashes.forEach((hash, fileName) => {
+      if (!hashToFirstFileName.has(hash)) {
+        hashToFirstFileName.set(hash, fileName);
+      }
+    });
+
+    // 新しいファイルのハッシュを計算
+    for (const file of files) {
+      try {
+        const hash = await computeFileHash(file);
+        newHashes.set(file.name, hash);
+
+        // 同じハッシュを持つファイルが既にあるかチェック
+        const existingFileName = hashToFirstFileName.get(hash);
+        if (existingFileName && existingFileName !== file.name) {
+          // 重複を検出
+          duplicates.set(file.name, existingFileName);
+        } else {
+          // 最初のファイルとして登録
+          hashToFirstFileName.set(hash, file.name);
+        }
+      } catch {
+        // ハッシュ計算に失敗した場合はスキップ（重複チェックなしで続行）
+        console.warn(`Failed to compute hash for ${file.name}`);
+      }
+    }
+
+    return { newHashes, duplicates };
   }
 
   const addFiles = useCallback(
@@ -212,30 +293,60 @@ export function useFileSelection() {
         const next = [...selectedFiles, ...newFiles];
         setSelectedFiles(next);
 
-        // プレビュー生成
-        await buildPreviews(next);
+        // 4. ハッシュ計算と重複検出
+        setProgress({ current: 0, total: next.length });
+        const { newHashes, duplicates } = await detectDuplicates(
+          next,
+          new Map() // 全ファイルを再計算（追加ファイルのみでなく全体で検出）
+        );
+
+        setFileHashes(newHashes);
+        setDuplicateFiles(duplicates);
+
+        // プレビュー生成（重複情報を含める）
+        await buildPreviews(next, duplicates);
       } finally {
         setIsProcessing(false);
         setProgress({ current: 0, total: 0 });
       }
     },
-    [selectedFiles]
+    [selectedFiles, fileHashes]
   );
 
   const removeFile = useCallback(
     async (name: string) => {
       const next = selectedFiles.filter((f) => f.name !== name);
       setSelectedFiles(next);
-      await buildPreviews(next);
+
+      // ハッシュと重複情報を更新
+      const newHashes = new Map(fileHashes);
+      newHashes.delete(name);
+      setFileHashes(newHashes);
+
+      // 重複情報を再計算
+      const { duplicates } = await detectDuplicates(next, new Map());
+      setDuplicateFiles(duplicates);
+
+      await buildPreviews(next, duplicates);
     },
-    [selectedFiles]
+    [selectedFiles, fileHashes]
   );
 
   const clearFiles = useCallback(() => {
     setSelectedFiles([]);
     setPreviews([]);
     setErrorMessage(null);
+    setFileHashes(new Map());
+    setDuplicateFiles(new Map());
   }, []);
+
+  // アップロード対象のファイル（重複を除外）
+  const uploadableFiles = selectedFiles.filter(
+    (f) => !duplicateFiles.has(f.name)
+  );
+
+  // 重複ファイル数
+  const duplicateCount = duplicateFiles.size;
 
   return {
     selectedFiles,
@@ -247,5 +358,10 @@ export function useFileSelection() {
     addFiles,
     removeFile,
     clearFiles,
+    // 重複関連
+    fileHashes,
+    duplicateFiles,
+    duplicateCount,
+    uploadableFiles,
   };
 }

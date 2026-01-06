@@ -25,7 +25,7 @@ import Tooltip from "@/components/ui/Tooltip";
 import type { DocumentResponse } from "@/lib/api/generated/model";
 import { postDocumentsUploadBody } from "@/lib/api/generated/zod/default/default.zod";
 import { handleCommonError } from "@/lib/error-handler";
-import { cn, parseTags } from "@/lib/utils";
+import { parseTags } from "@/lib/utils";
 
 import { useToast } from "@/providers/ToastProvider";
 
@@ -54,6 +54,10 @@ export default function UploadForm({
     addFiles,
     removeFile,
     clearFiles,
+    // 重複関連
+    duplicateCount,
+    uploadableFiles,
+    fileHashes,
   } = useFileSelection();
 
   const [tagsInput, setTagsInput] = useState<string>("");
@@ -61,7 +65,6 @@ export default function UploadForm({
   const [showTagSuggestions, setShowTagSuggestions] = useState<boolean>(false);
   const [previewingFile, setPreviewingFile] = useState<Preview | null>(null);
 
-  // アップロードロジック
   const {
     uploadAsync,
     isPending: isUploading,
@@ -154,8 +157,14 @@ export default function UploadForm({
     e.preventDefault();
     setErrorMessage(null);
 
+    // アップロード対象がない場合
+    if (uploadableFiles.length === 0) {
+      setErrorMessage("アップロード可能なファイルがありません。");
+      return;
+    }
+
     const validationTarget = {
-      files: selectedFiles.map((f) => ({
+      files: uploadableFiles.map((f) => ({
         fileName: f.name,
         contentType: f.type || "application/octet-stream",
         fileSize: f.size,
@@ -166,14 +175,22 @@ export default function UploadForm({
     try {
       postDocumentsUploadBody.parse(validationTarget);
 
+      // 重複を除外したファイルのみアップロード
+      // ハッシュ情報も渡す
       const res = await uploadAsync({
-        files: selectedFiles,
+        files: uploadableFiles,
         tags: currentTags,
+        fileHashes, // 既に計算済みのハッシュを渡す
       });
 
       if (res && res.length > 0) {
         onUploaded?.([]);
-        showToast({ type: "success", message: "アップロードが完了しました" });
+        const duplicateMessage =
+          duplicateCount > 0 ? `（${duplicateCount}件の重複は除外）` : "";
+        showToast({
+          type: "success",
+          message: `アップロードが完了しました${duplicateMessage}`,
+        });
 
         setTimeout(() => {
           clearFiles();
@@ -238,25 +255,18 @@ export default function UploadForm({
           }
         >
           {isProcessing ? (
-            <div className="flex flex-col items-center gap-3 py-4">
-              <Spinner size="8" />
-              <div className="text-center space-y-1">
-                <Text variant="md" color="muted" weight="medium">
-                  ファイルを読み込んでいます...
-                </Text>
-                {fileSelectionProgress.total > 0 && (
-                  <Text variant="sm" color="muted">
-                    {fileSelectionProgress.current} /{" "}
-                    {fileSelectionProgress.total} 件
-                  </Text>
-                )}
-              </div>
+            <div className="flex flex-col items-center gap-2 py-4">
+              <Spinner size="6" />
+              <Text variant="md" color="muted">
+                ファイルを処理中... ({fileSelectionProgress.current}/
+                {fileSelectionProgress.total})
+              </Text>
             </div>
           ) : (
             <>
-              <div className="bg-background p-3 rounded-full shadow-sm">
+              <div className="flex items-center justify-center shrink-0 size-8 rounded-full bg-primary/10">
                 <Upload
-                  className={`size-6 ${
+                  className={`size-4 ${
                     isDragging ? "text-primary" : "text-muted-foreground"
                   }`}
                 />
@@ -290,7 +300,7 @@ export default function UploadForm({
         </div>
 
         {errorMessage && (
-          <Alert color="destructive" className="mt-2">
+          <Alert color="destructive">
             <Text
               variant="md"
               color="destructive"
@@ -305,27 +315,21 @@ export default function UploadForm({
         <>
           {selectedFiles.length > 0 && (
             <div className="bg-background border rounded-lg p-4 shadow-sm mt-2">
-              <div className="pb-4">
+              <div className="pb-2">
                 <div className="flex flex-col md:flex-row md:items-start gap-4 pb-1">
-                  <div className="flex-1 space-y-2">
-                    <Text
-                      htmlFor="uploadFormTagsInput"
-                      as="label"
-                      variant="md"
-                      color="muted"
-                      weight="semibold"
-                      className="flex gap-2 items-center relative"
-                    >
-                      タグ
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1 pb-1">
                       <Text
-                        variant="xs"
+                        htmlFor="uploadFormTagsInput"
+                        as="label"
+                        variant="md"
                         color="muted"
-                        weight="normal"
-                        as="span"
+                        weight="semibold"
+                        className="flex items-center relative"
                       >
-                        任意
+                        タグ
                       </Text>
-                      <Tooltip position="top-0 left-24" circleSize={5}>
+                      <Tooltip position="bottom-8 right-8" circleSize={5}>
                         <div className="space-y-1">
                           <Text
                             variant="md"
@@ -336,127 +340,127 @@ export default function UploadForm({
                             おすすめの方法:
                           </Text>
                           <br />
-                          <Text variant="sm" weight="medium">
-                            ファイルパス名をつけることで、ファイルを管理しやすくなります。
+                          <Text variant="md" weight="medium">
+                            ExplorerまたはFinderのパスを入力することで、ファイルを管理しやすくなります。
                           </Text>
-                          <Text variant="sm" weight="medium" leading="relaxed">
+                          <Text variant="md" weight="medium" leading="relaxed">
                             例:
-                            <br /> ・ファイルのパス:
-                            /MyelinBaseソリューション部/社内資料/20251214就業規則.pdf
+                            <br /> ・パスが下記のファイルを選択した場合:
                             <br />
-                            ・タグ: MyelinBaseソリューション部, 社内資料,
-                            就業規則
+                            &nbsp;&nbsp;&nbsp;&nbsp;xxx\MyelinBaseソリューション部\社内資料\20251214就業規則.pdf
+                            <br />
+                            ・タグ入力欄に下記を入力:
+                            <br />
+                            &nbsp;&nbsp;&nbsp;&nbsp;MyelinBaseソリューション部,
+                            社内資料, 就業規則
                           </Text>
                         </div>
                       </Tooltip>
-                    </Text>
-                    <div className="flex items-center gap-2 flex-wrap md:flex-nowrap">
-                      <div className="relative flex-1">
-                        <Input
-                          id="uploadFormTagsInput"
-                          size="md"
-                          value={tagsInput}
-                          onFocus={() => setShowTagSuggestions(true)}
-                          onClick={() => setShowTagSuggestions(true)}
-                          onChange={(e) => {
-                            setShowTagSuggestions(true);
-                            setTagsInput(e.target.value);
-                          }}
-                          onBlur={() =>
-                            setTimeout(() => setShowTagSuggestions(false), 200)
-                          }
-                          className={`${
-                            isOverLimit && "border-warning"
-                          } md:w-full`}
-                          placeholder="例: 就業規則, 議事録 (カンマ区切りで複数可)"
-                          disabled={isUploading}
-                        />
-                        {showTagSuggestions && tagSuggestions.length > 0 && (
-                          <DropdownList size="md">
-                            {tagSuggestions.map((tag, index) => (
-                              <DropdownItem
-                                key={tag + index}
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  onSelectTagSuggestion(tag);
-                                }}
-                              >
-                                {tag}
-                              </DropdownItem>
-                            ))}
-                          </DropdownList>
-                        )}
-                      </div>
-                      <div className="shrink-0 ml-auto">
-                        <Button
-                          size="sm"
-                          type="submit"
-                          className={cn(
-                            (isUploading || isOverLimit) &&
-                              "bg-primary/70 cursor-not-allowed hover:bg-primary/70"
-                          )}
-                          disabled={
-                            isUploading ||
-                            isProcessing ||
-                            selectedFiles.length === 0 ||
-                            isOverLimit
-                          }
-                        >
-                          {isUploading ? (
-                            <Spinner size="3.5" color="background" />
-                          ) : (
-                            <Upload className="size-3.5" />
-                          )}
-                          <Text
-                            variant="sm"
-                            color="white"
-                            weight="semibold"
-                            as="span"
-                          >
-                            {isUploading
-                              ? "アップロード中..."
-                              : "アップロード開始"}
-                          </Text>
-                        </Button>
-                      </div>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="uploadFormTagsInput"
+                        size="md"
+                        type="text"
+                        value={tagsInput}
+                        onFocus={() => setShowTagSuggestions(true)}
+                        onChange={(e) => {
+                          setShowTagSuggestions(true);
+                          setTagsInput(e.target.value);
+                        }}
+                        onBlur={() =>
+                          setTimeout(() => setShowTagSuggestions(false), 200)
+                        }
+                        className={`${
+                          isOverLimit && "border-warning"
+                        } md:w-full`}
+                        placeholder="例: 就業規則, 議事録 (カンマ区切りで複数可)"
+                        disabled={isUploading}
+                      />
+                      {showTagSuggestions && tagSuggestions.length > 0 && (
+                        <DropdownList size="md">
+                          {tagSuggestions.map((tag, index) => (
+                            <DropdownItem
+                              key={tag + index}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                onSelectTagSuggestion(tag);
+                              }}
+                            >
+                              {tag}
+                            </DropdownItem>
+                          ))}
+                        </DropdownList>
+                      )}
                     </div>
                   </div>
                 </div>
-
-                {isOverLimit && (
-                  <Alert color="warning">
-                    <Text variant="sm" color="warning" weight="medium">
-                      タグの上限（{MAX_TAGS}個）を超えています。
-                      更新するにはタグを減らしてください。
-                    </Text>
-                  </Alert>
-                )}
-
-                {currentTags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {visibleTags.map((tag) => (
-                      <TagChip
-                        isDeleted={!isUploading}
-                        key={tag}
-                        tag={tag}
-                        onClick={() => removeTagFromInput(tag)}
-                      />
-                    ))}
-                    {hiddenCount > 0 && (
-                      <Text
-                        variant="sm"
-                        color="warning"
-                        weight="medium"
-                        className="inline-flex items-center gap-1"
-                      >
-                        <AlertTriangle className="size-3" />+{hiddenCount}
-                      </Text>
-                    )}
-                  </div>
-                )}
               </div>
 
-              {/* アップロード中は簡易ステータスを表示、それ以外はプレビューリストを表示 */}
+              {isOverLimit && (
+                <Alert color="warning" className="mb-3 mt-0">
+                  <Text variant="sm" color="warning" weight="medium">
+                    タグの上限（{MAX_TAGS}個）を超えています。
+                    更新するにはタグを減らしてください。
+                  </Text>
+                </Alert>
+              )}
+
+              {currentTags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {visibleTags.map((tag) => (
+                    <TagChip
+                      isDeleted={!isUploading}
+                      key={tag}
+                      tag={tag}
+                      onClick={() => removeTagFromInput(tag)}
+                    />
+                  ))}
+                  {hiddenCount > 0 && (
+                    <Text
+                      variant="sm"
+                      color="warning"
+                      weight="medium"
+                      className="inline-flex items-center gap-1"
+                    >
+                      <AlertTriangle className="size-3" />+{hiddenCount}
+                    </Text>
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-end shrink-0 mb-2">
+                <Button
+                  size="sm"
+                  type="submit"
+                  className={`${
+                    isUploading ||
+                    isOverLimit ||
+                    (uploadableFiles.length === 0 &&
+                      "bg-primary/70 cursor-not-allowed hover:bg-primary/70")
+                  }`}
+                  disabled={
+                    isUploading ||
+                    isProcessing ||
+                    uploadableFiles.length === 0 ||
+                    isOverLimit
+                  }
+                >
+                  {isUploading ? (
+                    <Spinner size="3.5" color="background" />
+                  ) : (
+                    <Upload className="size-3.5" />
+                  )}
+                  <Text variant="sm" color="white" weight="semibold" as="span">
+                    {isUploading
+                      ? "アップロード中..."
+                      : duplicateCount > 0
+                        ? `アップロード開始 (${uploadableFiles.length}件)`
+                        : "アップロード開始"}
+                  </Text>
+                </Button>
+              </div>
+
               {Object.keys(uploadProgress).length > 0 ? (
                 <UploadStatusList
                   uploadProgress={uploadProgress}
@@ -469,6 +473,7 @@ export default function UploadForm({
                   onRemove={handleRemoveFile}
                   onPreviewClick={setPreviewingFile}
                   selectedFilesCount={selectedFiles.length}
+                  duplicateCount={duplicateCount}
                 />
               )}
             </div>
@@ -500,11 +505,27 @@ export default function UploadForm({
             </div>
           )}
           {previewingFile.kind === "pdf" && (
-            <iframe
-              src={previewingFile.url}
-              className="w-full h-[70vh] rounded border shadow-sm bg-background"
-              title="PDF Preview"
-            />
+            <div className="flex flex-col gap-3">
+              <iframe
+                key={previewingFile.url}
+                src={previewingFile.url}
+                className="w-full h-[65vh] rounded border shadow-sm bg-white"
+                title="PDF Preview"
+              />
+
+              <div className="flex items-center justify-center gap-2 pt-2 border-t border-border">
+                <Text variant="sm" color="muted">
+                  プレビューが表示されない場合:
+                </Text>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  onClick={() => window.open(previewingFile.url, "_blank")}
+                >
+                  新しいタブで開く
+                </Button>
+              </div>
+            </div>
           )}
         </Modal>
       )}

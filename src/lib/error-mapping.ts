@@ -3,6 +3,9 @@ import { ErrorCode } from "@/lib/api/generated/model";
 // バックエンドで追加されたがOpenAPI再生成前のエラーコード
 const DOCUMENTS_DUPLICATE_CONTENT = "DOCUMENTS_DUPLICATE_CONTENT";
 
+// フロントエンドのみで使用するエラーコード（選択ファイル間の重複）
+const DOCUMENTS_DUPLICATE_IN_SELECTION = "DOCUMENTS_DUPLICATE_IN_SELECTION";
+
 /**
  * エラーオブジェクトからユーザー向けのエラーメッセージを取得する
  */
@@ -14,6 +17,11 @@ export function getErrorMessage(code: ErrorCode | string): string {
   // OpenAPI生成前の新しいエラーコードを先にチェック
   if (code === DOCUMENTS_DUPLICATE_CONTENT) {
     return "同じ内容のファイルが既にアップロードされています。";
+  }
+
+  // フロントエンドのみのエラーコード
+  if (code === DOCUMENTS_DUPLICATE_IN_SELECTION) {
+    return "選択したファイルの中に同じ内容のファイルがあります。";
   }
 
   switch (code) {

@@ -36,23 +36,23 @@ function Alert({
   return (
     <div
       className={cn(
-        "my-2 p-3 rounded-md flex gap-2",
+        "my-2 p-2 rounded-md flex gap-2",
         iconAlignClass[iconAlign],
         colors[color],
         className
       )}
     >
       {color === "destructive" && (
-        <AlertCircle className="size-5 shrink-0 text-destructive" />
+        <AlertCircle className="size-4 shrink-0 text-destructive" />
       )}
       {color === "warning" && (
-        <AlertTriangle className="size-5 shrink-0 text-warning" />
+        <AlertTriangle className="size-4 shrink-0 text-warning" />
       )}
       {color === "success" && (
-        <CheckCircle className="size-5 shrink-0 text-success" />
+        <CheckCircle className="size-4 shrink-0 text-success" />
       )}
       {(color === "primary" || color === "default") && (
-        <Info className="size-5 shrink-0 text-primary" />
+        <Info className="size-4 shrink-0 text-primary" />
       )}
       {children}
     </div>

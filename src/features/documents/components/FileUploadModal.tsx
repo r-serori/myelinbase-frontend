@@ -21,12 +21,12 @@ export default function FileUploadModal({
   existingFileNames?: string[];
 }) {
   const tooltipContent = (
-    <Text variant="sm" color="primary" leading="relaxed">
+    <Text variant="sm" leading="relaxed">
       1. ファイルを選択 <br />
       2. タグを入力（任意）
       <br /> &nbsp;&nbsp;・タグを付けることで、後に検索しやすくなります。
       <br />
-      3.アップロード
+      3. アップロード
       <br />
       4. ステータスが「完了」になったドキュメントは、chat画面で引用できます。
     </Text>
