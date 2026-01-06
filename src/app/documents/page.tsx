@@ -65,7 +65,7 @@ function Main() {
             tagSuggestions={tagSuggestions}
           />
 
-          <div className="pb-2 pl-4 hidden md:block w-full max-w-[460px]">
+          <div className="pb-2 pl-4 hidden md:block w-full max-w-[500px]">
             <div className="flex items-center gap-2 mb-2">
               <Button
                 variant={"outline"}

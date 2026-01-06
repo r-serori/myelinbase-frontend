@@ -33,18 +33,48 @@ interface UploadPayload {
   fileHashes?: Map<string, string>; // 事前計算済みハッシュ（オプション）
 }
 
+// アップロード結果サマリー
+export interface UploadResultSummary {
+  successCount: number;
+  backendDuplicateCount: number;
+  otherErrorCount: number;
+  totalRequested: number;
+}
+
+// バックエンド重複エラーコード
+const BACKEND_DUPLICATE_ERROR_CODE = "DOCUMENTS_DUPLICATE_CONTENT";
+
 export function useUpload() {
   const qc = useQueryClient();
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [uploadProgress, setUploadProgress] = useState<
     Record<string, UploadProgress>
   >({});
+  const [lastResultSummary, setLastResultSummary] =
+    useState<UploadResultSummary | null>(null);
 
   const uploadRequestMutation = usePostDocumentsUpload();
 
-  const upload = async (payload: UploadPayload) => {
+  const clearProgress = () => {
+    setStatus("idle");
+    setUploadProgress({});
+    setLastResultSummary(null);
+  };
+
+  const upload = async (
+    payload: UploadPayload
+  ): Promise<UploadResultSummary> => {
+    // 結果サマリーを初期化
+    const resultSummary: UploadResultSummary = {
+      successCount: 0,
+      backendDuplicateCount: 0,
+      otherErrorCount: 0,
+      totalRequested: payload.files.length,
+    };
+
     try {
       setStatus("requesting");
+      setLastResultSummary(null);
 
       // 初期進捗セット
       const initialProgress: Record<string, UploadProgress> = {};
@@ -109,8 +139,14 @@ export function useUpload() {
       // 2. S3へアップロード（並列実行）
       const uploadPromises = response.results.map(
         async (result: UploadRequestFileResult) => {
-          console.log("result", JSON.stringify(result, null, 2));
           if (result.status !== "success" || !result.data) {
+            // エラーの種類を判別
+            if (result.errorCode === BACKEND_DUPLICATE_ERROR_CODE) {
+              resultSummary.backendDuplicateCount++;
+            } else {
+              resultSummary.otherErrorCount++;
+            }
+
             setUploadProgress((prev) => ({
               ...prev,
               [result.fileName]: {
@@ -170,6 +206,8 @@ export function useUpload() {
               },
             }));
 
+            resultSummary.successCount++;
+
             return {
               documentId: uploadData.documentId,
               fileName: file.name,
@@ -178,6 +216,7 @@ export function useUpload() {
               s3Key: uploadData.s3Key,
             };
           } catch (error) {
+            resultSummary.otherErrorCount++;
             setUploadProgress((prev) => ({
               ...prev,
               [file.name]: {
@@ -195,7 +234,14 @@ export function useUpload() {
         (item): item is NonNullable<typeof item> => item !== null
       );
 
-      if (successfulUploads.length === 0) {
+      // 結果サマリーを保存
+      setLastResultSummary(resultSummary);
+
+      if (
+        successfulUploads.length === 0 &&
+        resultSummary.backendDuplicateCount === 0
+      ) {
+        setStatus("error");
         throw new Error("すべてのファイルのアップロードに失敗しました。");
       }
 
@@ -231,14 +277,10 @@ export function useUpload() {
         qc.invalidateQueries({ queryKey: queryKeys.documents });
       }
 
-      setTimeout(() => {
-        setStatus("idle");
-        setUploadProgress({});
-      }, 3000);
-
-      return successfulUploads;
+      return resultSummary;
     } catch (error) {
       setStatus("error");
+      setLastResultSummary(resultSummary);
       throw error;
     }
   };
@@ -248,9 +290,11 @@ export function useUpload() {
       upload(payload).catch(() => {});
     },
     uploadAsync: upload,
+    clearProgress,
     isPending: status === "requesting" || status === "uploading",
     status,
     progress: uploadProgress,
     error: uploadRequestMutation.error,
+    lastResultSummary,
   };
 }

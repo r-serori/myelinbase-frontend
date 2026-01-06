@@ -56,10 +56,7 @@ export function useFileSelection() {
       file.name.toLowerCase().endsWith(ext)
     );
 
-    const basePreview = {
-      isDuplicate: duplicateOf !== null,
-      duplicateOf,
-    };
+    const isDuplicate = duplicateOf !== null;
 
     if (
       mime.startsWith("text/") ||
@@ -70,32 +67,35 @@ export function useFileSelection() {
       try {
         const text = await file.text();
         return {
-          kind: "text",
+          kind: "text" as const,
           name: file.name,
           size: file.size,
           mime,
           snippet: text.slice(0, 2000),
-          ...basePreview,
+          isDuplicate,
+          duplicateOf,
         };
       } catch {
         return {
-          kind: "text",
+          kind: "text" as const,
           name: file.name,
           size: file.size,
           mime,
           snippet: "",
-          ...basePreview,
+          isDuplicate,
+          duplicateOf,
         };
       }
     } else if (mime === "application/pdf") {
       const url = URL.createObjectURL(file);
       return {
-        kind: "pdf",
+        kind: "pdf" as const,
         name: file.name,
         size: file.size,
         mime,
         url,
-        ...basePreview,
+        isDuplicate,
+        duplicateOf,
       };
     }
 
@@ -203,12 +203,38 @@ export function useFileSelection() {
   }
 
   const addFiles = useCallback(
-    async (files: File[], existingRemoteFileNames?: Set<string>) => {
+    async (
+      files: File[],
+      existingRemoteFileNames?: Set<string>,
+      options?: { clearExisting?: boolean }
+    ) => {
       if (!files.length) return;
+
+      // clearExistingがtrueの場合、既存ファイルをクリアしてから追加
+      const shouldClear = options?.clearExisting ?? false;
+      const currentFiles = shouldClear ? [] : selectedFiles;
+      const currentDuplicates = shouldClear
+        ? new Map<string, string | null>()
+        : duplicateFiles;
+
+      if (shouldClear) {
+        // 既存のプレビューURLを解放
+        setPreviews((prev) => {
+          prev.forEach((p) => {
+            if (p.kind === "pdf" && p.url) {
+              URL.revokeObjectURL(p.url);
+            }
+          });
+          return [];
+        });
+        setFileHashes(new Map());
+        setDuplicateFiles(new Map());
+        setErrorMessage(null);
+      }
 
       setIsProcessing(true);
       setProgress({ current: 0, total: files.length });
-      setErrorMessage(null);
+      if (!shouldClear) setErrorMessage(null);
 
       await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -228,8 +254,13 @@ export function useFileSelection() {
           }
         }
 
-        const remainingSlots = MAX_FILES - selectedFiles.length;
-        const filesToAdd = validCandidates.slice(0, remainingSlots);
+        // アクティブなファイル数（フロントエンド重複を除く）
+        const activeFilesCount = currentFiles.length - currentDuplicates.size;
+        const remainingSlots = MAX_FILES - activeFilesCount;
+        const filesToAdd = validCandidates.slice(
+          0,
+          Math.max(0, remainingSlots)
+        );
         const skippedByLimitCount = validCandidates.length - filesToAdd.length;
         const errorMessages: string[] = [];
 
@@ -267,7 +298,7 @@ export function useFileSelection() {
         if (filesToAdd.length === 0) return;
 
         // 3. 追加対象ファイルの処理（重複名リネームなど）
-        const existingNames = new Set(selectedFiles.map((f) => f.name));
+        const existingNames = new Set(currentFiles.map((f) => f.name));
         if (existingRemoteFileNames) {
           existingRemoteFileNames.forEach((name) => existingNames.add(name));
         }
@@ -290,7 +321,7 @@ export function useFileSelection() {
           }
         }
 
-        const next = [...selectedFiles, ...newFiles];
+        const next = [...currentFiles, ...newFiles];
         setSelectedFiles(next);
 
         // 4. ハッシュ計算と重複検出
@@ -310,26 +341,36 @@ export function useFileSelection() {
         setProgress({ current: 0, total: 0 });
       }
     },
-    [selectedFiles, fileHashes]
+    [selectedFiles, fileHashes, duplicateFiles]
   );
 
   const removeFile = useCallback(
-    async (name: string) => {
+    async (name: string, options?: { skipDuplicateRecalc?: boolean }) => {
       const next = selectedFiles.filter((f) => f.name !== name);
       setSelectedFiles(next);
 
-      // ハッシュと重複情報を更新
+      // ハッシュを更新
       const newHashes = new Map(fileHashes);
       newHashes.delete(name);
       setFileHashes(newHashes);
 
-      // 重複情報を再計算
-      const { duplicates } = await detectDuplicates(next, new Map());
-      setDuplicateFiles(duplicates);
+      // 重複情報を更新
+      const newDuplicates = new Map(duplicateFiles);
+      newDuplicates.delete(name);
 
-      await buildPreviews(next, duplicates);
+      // 重複再計算をスキップするかどうか（アップロード完了後など）
+      if (options?.skipDuplicateRecalc) {
+        // 単純にそのファイルの重複情報を削除するだけ
+        setDuplicateFiles(newDuplicates);
+        await buildPreviews(next, newDuplicates);
+      } else {
+        // 通常のフロー：重複情報を再計算
+        const { duplicates } = await detectDuplicates(next, new Map());
+        setDuplicateFiles(duplicates);
+        await buildPreviews(next, duplicates);
+      }
     },
-    [selectedFiles, fileHashes]
+    [selectedFiles, fileHashes, duplicateFiles]
   );
 
   const clearFiles = useCallback(() => {

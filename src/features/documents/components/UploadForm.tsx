@@ -6,7 +6,6 @@ import FilePreviewList, {
   Preview,
 } from "@/features/documents/components/FilePreviewList";
 import TagChip from "@/features/documents/components/TagChip";
-import UploadStatusList from "@/features/documents/components/UploadStatusList";
 import {
   ALLOWED_EXTENSIONS,
   MAX_FILES,
@@ -69,6 +68,7 @@ export default function UploadForm({
     uploadAsync,
     isPending: isUploading,
     progress: uploadProgress,
+    clearProgress,
   } = useUpload();
 
   const { showToast } = useToast();
@@ -103,7 +103,12 @@ export default function UploadForm({
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
-    addFiles(files, existingRemoteFileNames);
+    // 結果表示中に新しいファイルを追加した場合、前回の結果とファイルをクリア
+    const shouldClear = Object.keys(uploadProgress).length > 0;
+    if (shouldClear) {
+      clearProgress();
+    }
+    addFiles(files, existingRemoteFileNames, { clearExisting: shouldClear });
     e.target.value = "";
   }
 
@@ -120,13 +125,22 @@ export default function UploadForm({
   function onDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     setIsDragging(false);
+    // 結果表示中に新しいファイルを追加した場合、前回の結果とファイルをクリア
+    const shouldClear = Object.keys(uploadProgress).length > 0;
+    if (shouldClear) {
+      clearProgress();
+    }
     const files = Array.from(e.dataTransfer?.files || []);
-    addFiles(files, existingRemoteFileNames);
+    addFiles(files, existingRemoteFileNames, { clearExisting: shouldClear });
   }
+
+  // アップロード結果表示中かどうか（重複再計算スキップ判定用）
+  const hasUploadProgress = Object.keys(uploadProgress).length > 0;
 
   function handleRemoveFile(name: string) {
     if (isUploading) return;
-    removeFile(name);
+    // アップロード完了後の削除時は重複再計算をスキップ（チカチカ防止）
+    removeFile(name, { skipDuplicateRecalc: hasUploadProgress });
   }
 
   function removeTagFromInput(tag: string) {
@@ -177,26 +191,63 @@ export default function UploadForm({
 
       // 重複を除外したファイルのみアップロード
       // ハッシュ情報も渡す
-      const res = await uploadAsync({
+      const result = await uploadAsync({
         files: uploadableFiles,
         tags: currentTags,
         fileHashes, // 既に計算済みのハッシュを渡す
       });
 
-      if (res && res.length > 0) {
+      console.log("result", JSON.stringify(result, null, 2));
+
+      // 結果メッセージを構築
+      const messages: string[] = [];
+
+      if (result.successCount > 0) {
+        messages.push(`${result.successCount}件アップロード完了`);
+      }
+
+      // フロントエンド重複（選択時に除外）
+      if (duplicateCount > 0) {
+        messages.push(`${duplicateCount}件は選択時に除外`);
+      }
+
+      // バックエンド重複（既存ファイルと重複）
+      if (result.backendDuplicateCount > 0) {
+        messages.push(`${result.backendDuplicateCount}件は既存ファイルと重複`);
+      }
+
+      // その他エラー
+      if (result.otherErrorCount > 0) {
+        messages.push(`${result.otherErrorCount}件はエラー`);
+      }
+
+      const hasErrors =
+        result.backendDuplicateCount > 0 || result.otherErrorCount > 0;
+
+      // 結果に応じてトーストの種類を決定
+      if (result.successCount > 0) {
         onUploaded?.([]);
-        const duplicateMessage =
-          duplicateCount > 0 ? `（${duplicateCount}件の重複は除外）` : "";
         showToast({
-          type: "success",
-          message: `アップロードが完了しました${duplicateMessage}`,
+          type: hasErrors ? "warning" : "success",
+          message: messages.join("、"),
         });
 
-        setTimeout(() => {
-          clearFiles();
-          setTagsInput("");
-          if (fileRef.current) fileRef.current.value = "";
-        }, 2000);
+        // 全成功時のみ自動クリア
+        if (!hasErrors) {
+          setTimeout(() => {
+            clearFiles();
+            clearProgress();
+            setTagsInput("");
+
+            if (fileRef.current) fileRef.current.value = "";
+          }, 2000);
+        }
+      } else if (result.backendDuplicateCount > 0) {
+        // 全てバックエンド重複
+        showToast({
+          type: "error",
+          message: `全ファイルが既存ファイルと重複しています（${result.backendDuplicateCount}件）`,
+        });
       }
     } catch (err: unknown) {
       handleCommonError(
@@ -207,6 +258,23 @@ export default function UploadForm({
       );
     }
   }
+
+  // 手動クリアハンドラー
+
+  function handleClearForm() {
+    clearFiles();
+    clearProgress();
+
+    setTagsInput("");
+
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  // アップロード結果表示中
+  const isShowingResults = Object.keys(uploadProgress).length > 0;
+
+  // 結果表示中でもファイル追加を許可（追加時に結果をクリア）
+  const isDropzoneDisabled = isProcessing || isUploading;
 
   return (
     <div>
@@ -237,7 +305,7 @@ export default function UploadForm({
             relative flex flex-col items-center justify-center gap-3 
             border-2 border-dashed border-border rounded-lg p-6 transition-all
             ${
-              isProcessing || isUploading
+              isDropzoneDisabled
                 ? "cursor-wait pointer-events-none opacity-80"
                 : "cursor-pointer"
             }
@@ -247,12 +315,10 @@ export default function UploadForm({
                 : "border-border bg-muted/20 hover:bg-accent"
             }
           `}
-          onDragOver={!isProcessing && !isUploading ? onDragOver : undefined}
-          onDragLeave={!isProcessing && !isUploading ? onDragLeave : undefined}
-          onDrop={!isProcessing && !isUploading ? onDrop : undefined}
-          onClick={() =>
-            !isProcessing && !isUploading && fileRef.current?.click()
-          }
+          onDragOver={!isDropzoneDisabled ? onDragOver : undefined}
+          onDragLeave={!isDropzoneDisabled ? onDragLeave : undefined}
+          onDrop={!isDropzoneDisabled ? onDrop : undefined}
+          onClick={() => !isDropzoneDisabled && fileRef.current?.click()}
         >
           {isProcessing ? (
             <div className="flex flex-col items-center gap-2 py-4">
@@ -272,12 +338,25 @@ export default function UploadForm({
                 />
               </div>
               <div className="text-center space-y-1">
-                <Text variant="md" color="muted" leading="relaxed">
-                  クリックしてファイルを選択 または ドラッグ＆ドロップ
-                  <br />
-                  対応形式: {ALLOWED_EXTENSIONS.join("  ")}
-                  (最大 50MB / {MAX_FILES}件まで)
-                </Text>
+                {isShowingResults ? (
+                  <Text
+                    variant="md"
+                    color="muted"
+                    leading="relaxed"
+                    className="text-center"
+                  >
+                    クリックしてファイルを追加 または ドラッグ＆ドロップ
+                    <br />
+                    （前回の結果はクリアされます）
+                  </Text>
+                ) : (
+                  <Text variant="md" color="muted" leading="relaxed">
+                    クリックしてファイルを選択 または ドラッグ＆ドロップ
+                    <br />
+                    対応形式: {ALLOWED_EXTENSIONS.join("  ")}
+                    (最大 50MB / {MAX_FILES}件まで)
+                  </Text>
+                )}
               </div>
             </>
           )}
@@ -287,7 +366,7 @@ export default function UploadForm({
               type="button"
               variant="outline"
               size="xs"
-              disabled={isProcessing || isUploading}
+              disabled={isDropzoneDisabled}
               onClick={(e) => {
                 e.stopPropagation();
                 folderRef.current?.click();
@@ -431,6 +510,7 @@ export default function UploadForm({
 
               <div className="flex justify-end shrink-0 mb-2">
                 <Button
+                  id="uploadButton"
                   size="sm"
                   type="submit"
                   className={`${
@@ -461,21 +541,16 @@ export default function UploadForm({
                 </Button>
               </div>
 
-              {Object.keys(uploadProgress).length > 0 ? (
-                <UploadStatusList
-                  uploadProgress={uploadProgress}
-                  selectedFiles={selectedFiles}
-                  isUploading={isUploading}
-                />
-              ) : (
-                <FilePreviewList
-                  previews={previews}
-                  onRemove={handleRemoveFile}
-                  onPreviewClick={setPreviewingFile}
-                  selectedFilesCount={selectedFiles.length}
-                  duplicateCount={duplicateCount}
-                />
-              )}
+              <FilePreviewList
+                previews={previews}
+                onRemove={handleRemoveFile}
+                onPreviewClick={setPreviewingFile}
+                selectedFilesCount={selectedFiles.length}
+                duplicateCount={duplicateCount}
+                uploadProgress={uploadProgress}
+                isUploading={isUploading}
+                onClearAll={handleClearForm}
+              />
             </div>
           )}
         </>

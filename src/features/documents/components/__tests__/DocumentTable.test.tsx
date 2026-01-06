@@ -112,7 +112,8 @@ describe("DocumentTable", () => {
     render(<DocumentTable {...defaultProps} />);
     const selectAllCheckbox = screen.getAllByRole("checkbox")[0];
     fireEvent.click(selectAllCheckbox);
-    expect(defaultProps.onSelectAll).toHaveBeenCalledWith(["1", "2"], true);
+    // PROCESSING状態のドキュメント（"2"）は除外されるため、"1"のみが渡される
+    expect(defaultProps.onSelectAll).toHaveBeenCalledWith(["1"], true);
   });
 
   it("handles delete action", () => {
