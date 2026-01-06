@@ -67,14 +67,28 @@ export default function DocumentTable({
     return documents.slice(start, start + PAGE_SIZE);
   }, [documents, currentPage, pageCount]);
 
-  const allPageIds = useMemo(
-    () => paginatedDocuments.map((d) => d.documentId),
+  // 現在のページ内の選択可能なドキュメントIDのみを抽出
+  const allPageSelectableIds = useMemo(
+    () =>
+      paginatedDocuments
+        .filter(
+          (d) =>
+            d.status !== DocumentStatus.PROCESSING &&
+            d.status !== DocumentStatus.PENDING_UPLOAD
+        )
+        .map((d) => d.documentId),
     [paginatedDocuments]
   );
+
+  // 選択可能なアイテムが全て選択されているかを確認
   const isAllSelected =
-    allPageIds.length > 0 && allPageIds.every((id) => selectedIds.includes(id));
+    allPageSelectableIds.length > 0 &&
+    allPageSelectableIds.every((id) => selectedIds.includes(id));
+
+  // 選択可能なアイテムの一部が選択されているかを確認
   const isIndeterminate =
-    allPageIds.some((id) => selectedIds.includes(id)) && !isAllSelected;
+    allPageSelectableIds.some((id) => selectedIds.includes(id)) &&
+    !isAllSelected;
 
   const canGoPrev = currentPage > 1;
   const canGoNext = pageCount > 0 && currentPage < pageCount;
@@ -91,8 +105,14 @@ export default function DocumentTable({
           アップロード済みファイル一覧
         </Text>
         {hasPendingDocs && (
-          <Text variant="sm" weight="semibold" color="primary">
-            {pendingCount} 件のファイルを処理中...
+          <Text
+            variant="sm"
+            weight="semibold"
+            color="primary"
+            className="flex items-center"
+          >
+            {pendingCount} 件のファイルを処理中
+            <span className="loading-dots ml-0.5" />
           </Text>
         )}
         <div className="flex flex-col md:flex-row items-center gap-2 md:gap-8">
@@ -185,16 +205,17 @@ export default function DocumentTable({
                     }
                   }}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const selectableDocs = documents.filter(
+                      (d) =>
+                        d.status !== DocumentStatus.PROCESSING &&
+                        d.status !== DocumentStatus.PENDING_UPLOAD
+                    );
+                    const targetIds = selectableDocs.map((d) => d.documentId);
+
                     if (isIndeterminate) {
-                      onSelectAll?.(
-                        documents.map((d) => d.documentId),
-                        false
-                      );
+                      onSelectAll?.(targetIds, false);
                     } else {
-                      onSelectAll?.(
-                        documents.map((d) => d.documentId),
-                        e.target.checked
-                      );
+                      onSelectAll?.(targetIds, e.target.checked);
                     }
                   }}
                   disabled={loading || documents.length === 0}
@@ -240,6 +261,9 @@ export default function DocumentTable({
               documents.length > 0 &&
               paginatedDocuments.map((d, index) => {
                 const isSelected = selectedIds.includes(d.documentId);
+                const isProcessing =
+                  d.status === DocumentStatus.PROCESSING ||
+                  d.status === DocumentStatus.PENDING_UPLOAD;
                 return (
                   <tr key={d.documentId + index}>
                     <td className="p-2 text-center">
@@ -251,7 +275,7 @@ export default function DocumentTable({
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           onSelect?.(d.documentId, e.target.checked)
                         }
-                        disabled={loading}
+                        disabled={loading || isProcessing}
                       />
                     </td>
                     <td className="p-2 whitespace-nowrap">

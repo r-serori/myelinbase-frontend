@@ -18,4 +18,9 @@ export interface FileMetadata {
    * @maximum 52428800
    */
   fileSize: number;
+  /**
+   * @minLength 64
+   * @maxLength 64
+   */
+  fileHash?: string;
 }

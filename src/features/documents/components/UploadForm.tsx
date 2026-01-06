@@ -34,9 +34,11 @@ const ACCEPT_STRING = ALLOWED_EXTENSIONS.join(" ");
 export default function UploadForm({
   onUploaded,
   allTags,
+  existingFileNames = [],
 }: {
   onUploaded?: (docs: DocumentResponse[]) => void;
   allTags?: string[];
+  existingFileNames?: string[];
 }) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const folderRef = useRef<HTMLInputElement | null>(null);
@@ -77,6 +79,12 @@ export default function UploadForm({
     new Set((allTags || []).map((t) => t.trim()).filter((t) => t.length > 0))
   );
 
+  // サーバー上のファイル名セットをメモ化
+  const existingRemoteFileNames = useMemo(
+    () => new Set(existingFileNames),
+    [existingFileNames]
+  );
+
   const tagSuggestions = (() => {
     if (!showTagSuggestions || normalizedAllTags.length === 0) return [];
     const availableTags = normalizedAllTags.filter(
@@ -92,7 +100,7 @@ export default function UploadForm({
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
-    addFiles(files);
+    addFiles(files, existingRemoteFileNames);
     e.target.value = "";
   }
 
@@ -110,7 +118,7 @@ export default function UploadForm({
     e.preventDefault();
     setIsDragging(false);
     const files = Array.from(e.dataTransfer?.files || []);
-    addFiles(files);
+    addFiles(files, existingRemoteFileNames);
   }
 
   function handleRemoveFile(name: string) {

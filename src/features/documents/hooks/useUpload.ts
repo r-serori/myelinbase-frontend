@@ -10,6 +10,7 @@ import {
   UploadRequestRequest,
 } from "@/lib/api/generated/model";
 import { queryKeys } from "@/lib/queryKeys";
+import { computeFileHash } from "@/lib/utils";
 
 type UploadStatus =
   | "idle"
@@ -23,6 +24,7 @@ export interface UploadProgress {
   fileName: string;
   progress: number; // 0 or 100 (簡易版なので途中経過はなし)
   status: "pending" | "uploading" | "completed" | "error";
+  errorCode?: string; // エラーコード（重複検知時など）
 }
 
 export function useUpload() {
@@ -38,15 +40,6 @@ export function useUpload() {
     try {
       setStatus("requesting");
 
-      const requestBody: UploadRequestRequest = {
-        files: payload.files.map((f) => ({
-          fileName: f.name,
-          contentType: f.type,
-          fileSize: f.size,
-        })),
-        tags: payload.tags,
-      };
-
       // 初期進捗セット
       const initialProgress: Record<string, UploadProgress> = {};
       payload.files.forEach((f) => {
@@ -57,6 +50,34 @@ export function useUpload() {
         };
       });
       setUploadProgress(initialProgress);
+
+      // 各ファイルのハッシュを並列計算（重複コンテンツ検知用）
+      const fileHashes = await Promise.all(
+        payload.files.map(async (f) => {
+          try {
+            const hash = await computeFileHash(f);
+            return { name: f.name, hash };
+          } catch {
+            // ハッシュ計算に失敗した場合はnullを返す（オプショナルなのでアップロードは続行）
+            return { name: f.name, hash: null };
+          }
+        })
+      );
+
+      const hashMap = new Map<string, string | null>();
+      fileHashes.forEach(({ name, hash }) => {
+        hashMap.set(name, hash);
+      });
+
+      const requestBody: UploadRequestRequest = {
+        files: payload.files.map((f) => ({
+          fileName: f.name,
+          contentType: f.type,
+          fileSize: f.size,
+          fileHash: hashMap.get(f.name) || undefined,
+        })),
+        tags: payload.tags,
+      };
 
       // 1. 署名付きURL取得
       const response = await uploadRequestMutation.mutateAsync({
@@ -72,12 +93,14 @@ export function useUpload() {
       // 2. S3へアップロード（並列実行）
       const uploadPromises = response.results.map(
         async (result: UploadRequestFileResult) => {
+          console.log("result", JSON.stringify(result, null, 2));
           if (result.status !== "success" || !result.data) {
             setUploadProgress((prev) => ({
               ...prev,
               [result.fileName]: {
                 ...prev[result.fileName],
                 status: "error",
+                errorCode: result.errorCode,
               },
             }));
             return null;

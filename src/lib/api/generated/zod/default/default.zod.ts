@@ -216,6 +216,9 @@ export const postDocumentsUploadBodyFilesItemFileNameMax = 255;
 export const postDocumentsUploadBodyFilesItemFileSizeMin = 0;
 export const postDocumentsUploadBodyFilesItemFileSizeMax = 52428800;
 
+export const postDocumentsUploadBodyFilesItemFileHashMin = 64;
+export const postDocumentsUploadBodyFilesItemFileHashMax = 64;
+
 export const postDocumentsUploadBodyFilesMax = 20;
 
 export const postDocumentsUploadBodyTagsItemMax = 50;
@@ -236,6 +239,11 @@ export const postDocumentsUploadBody = zod.object({
           .number()
           .min(postDocumentsUploadBodyFilesItemFileSizeMin)
           .max(postDocumentsUploadBodyFilesItemFileSizeMax),
+        fileHash: zod
+          .string()
+          .min(postDocumentsUploadBodyFilesItemFileHashMin)
+          .max(postDocumentsUploadBodyFilesItemFileHashMax)
+          .optional(),
       })
     )
     .min(1)

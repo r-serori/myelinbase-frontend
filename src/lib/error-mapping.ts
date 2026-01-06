@@ -1,12 +1,21 @@
 import { ErrorCode } from "@/lib/api/generated/model";
 
+// バックエンドで追加されたがOpenAPI再生成前のエラーコード
+const DOCUMENTS_DUPLICATE_CONTENT = "DOCUMENTS_DUPLICATE_CONTENT";
+
 /**
  * エラーオブジェクトからユーザー向けのエラーメッセージを取得する
  */
-export function getErrorMessage(code: ErrorCode): string {
+export function getErrorMessage(code: ErrorCode | string): string {
   if (!code) {
     return "予期せぬエラーが発生しました。";
   }
+
+  // OpenAPI生成前の新しいエラーコードを先にチェック
+  if (code === DOCUMENTS_DUPLICATE_CONTENT) {
+    return "同じ内容のファイルが既にアップロードされています。";
+  }
+
   switch (code) {
     case ErrorCode.VALIDATION_FAILED:
       return "入力内容に不備があります。確認してください。";

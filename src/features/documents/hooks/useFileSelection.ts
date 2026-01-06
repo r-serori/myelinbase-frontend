@@ -122,7 +122,7 @@ export function useFileSelection() {
   }
 
   const addFiles = useCallback(
-    async (files: File[]) => {
+    async (files: File[], existingRemoteFileNames?: Set<string>) => {
       if (!files.length) return;
 
       setIsProcessing(true);
@@ -187,6 +187,10 @@ export function useFileSelection() {
 
         // 3. 追加対象ファイルの処理（重複名リネームなど）
         const existingNames = new Set(selectedFiles.map((f) => f.name));
+        if (existingRemoteFileNames) {
+          existingRemoteFileNames.forEach((name) => existingNames.add(name));
+        }
+
         const newFiles: File[] = [];
 
         // プログレスバーの更新用

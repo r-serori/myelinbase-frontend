@@ -10,6 +10,7 @@ export default function FileUploadModal({
   showGuide,
   allTags,
   onAppendDocuments,
+  existingFileNames,
 }: {
   showUploadModal: boolean;
   setShowUploadModal: (show: boolean) => void;
@@ -17,6 +18,7 @@ export default function FileUploadModal({
   showGuide?: boolean;
   allTags?: string[];
   onAppendDocuments?: (docs: DocumentResponse[]) => void;
+  existingFileNames?: string[];
 }) {
   const tooltipContent = (
     <Text variant="sm" color="primary" leading="relaxed">
@@ -49,6 +51,7 @@ export default function FileUploadModal({
           setShowUploadModal(false);
         }}
         allTags={allTags}
+        existingFileNames={existingFileNames}
       />
     </Modal>
   );

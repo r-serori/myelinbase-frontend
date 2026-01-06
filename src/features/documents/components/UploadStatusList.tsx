@@ -79,7 +79,12 @@ export default function UploadStatusList({
               statusIcon = (
                 <XCircle className="size-4 text-destructive shrink-0" />
               );
-              statusText = "失敗";
+              // 重複コンテンツエラーの場合は特別なメッセージを表示
+              if (status.errorCode === "DOCUMENTS_DUPLICATE_CONTENT") {
+                statusText = "重複（既存ファイルと同内容）";
+              } else {
+                statusText = "失敗";
+              }
               statusColorClass = "text-destructive";
               break;
             case "uploading":
