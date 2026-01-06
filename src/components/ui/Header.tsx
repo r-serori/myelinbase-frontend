@@ -12,8 +12,9 @@ export default function Header() {
 
   const isTitlePage = pathname === "/";
   const isLoginPage = pathname === "/login/" || pathname === "/login";
-  const isRegisterPage = pathname === "/register";
-  const isForgotPasswordPage = pathname === "/forgot-password";
+  const isRegisterPage = pathname === "/register" || pathname === "/register/";
+  const isForgotPasswordPage =
+    pathname === "/forgot-password" || pathname === "/forgot-password/";
 
   if (isTitlePage || isLoginPage || isRegisterPage || isForgotPasswordPage)
     return null;
