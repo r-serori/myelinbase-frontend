@@ -43,7 +43,7 @@ export default function ProfilePage() {
 }
 
 function ProfileContent() {
-  const { user, logout } = useAuth();
+  const { user, logout, checkUser } = useAuth();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
 
@@ -127,6 +127,8 @@ function ProfileContent() {
           nickname: formNickname,
         },
       });
+
+      await checkUser();
 
       setNickname(formNickname);
       setIsEditingNickname(false);
