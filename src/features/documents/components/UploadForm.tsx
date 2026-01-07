@@ -197,8 +197,6 @@ export default function UploadForm({
         fileHashes, // 既に計算済みのハッシュを渡す
       });
 
-      console.log("result", JSON.stringify(result, null, 2));
-
       // 結果メッセージを構築
       const messages: string[] = [];
 
@@ -260,7 +258,6 @@ export default function UploadForm({
   }
 
   // 手動クリアハンドラー
-
   function handleClearForm() {
     clearFiles();
     clearProgress();

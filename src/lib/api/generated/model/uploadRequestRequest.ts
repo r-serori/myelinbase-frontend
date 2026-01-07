@@ -10,7 +10,7 @@ import type { FileMetadata } from "./fileMetadata";
 export interface UploadRequestRequest {
   /**
    * @minItems 1
-   * @maxItems 20
+   * @maxItems 100
    */
   files: FileMetadata[];
   /** @maxItems 20 */

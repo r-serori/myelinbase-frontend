@@ -219,7 +219,7 @@ export const postDocumentsUploadBodyFilesItemFileSizeMax = 52428800;
 export const postDocumentsUploadBodyFilesItemFileHashMin = 64;
 export const postDocumentsUploadBodyFilesItemFileHashMax = 64;
 
-export const postDocumentsUploadBodyFilesMax = 20;
+export const postDocumentsUploadBodyFilesMax = 100;
 
 export const postDocumentsUploadBodyTagsItemMax = 50;
 

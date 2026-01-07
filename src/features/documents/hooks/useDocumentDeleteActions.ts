@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { MAX_BATCH_DELETE } from "@/features/documents/config/document-constants";
 import {
   useBatchDeleteDocuments,
   useDeleteDocument,
@@ -46,6 +47,14 @@ export function useDocumentDeleteActions(refetch: () => Promise<unknown>) {
 
   const onSelect = (documentId: string, selected: boolean) => {
     if (selected) {
+      // 上限チェック
+      if (selectedIds.length >= MAX_BATCH_DELETE) {
+        showToast({
+          type: "warning",
+          message: `一度に選択できるのは${MAX_BATCH_DELETE}件までです`,
+        });
+        return;
+      }
       setSelectedIds((prev) => [...prev, documentId]);
     } else {
       setSelectedIds((prev) => prev.filter((id) => id !== documentId));
@@ -54,6 +63,30 @@ export function useDocumentDeleteActions(refetch: () => Promise<unknown>) {
 
   const onSelectAll = (documentIds: string[], selected: boolean) => {
     if (selected) {
+      const currentSet = new Set(selectedIds);
+      const newIds = documentIds.filter((id) => !currentSet.has(id));
+      const totalAfterAdd = selectedIds.length + newIds.length;
+
+      // 上限チェック
+      if (totalAfterAdd > MAX_BATCH_DELETE) {
+        const canAdd = MAX_BATCH_DELETE - selectedIds.length;
+        if (canAdd <= 0) {
+          showToast({
+            type: "warning",
+            message: `一度に選択できるのは${MAX_BATCH_DELETE}件までです`,
+          });
+          return;
+        }
+        // 追加可能な分だけ追加
+        const idsToAdd = newIds.slice(0, canAdd);
+        setSelectedIds((prev) => [...prev, ...idsToAdd]);
+        showToast({
+          type: "warning",
+          message: `一度に選択できるのは${MAX_BATCH_DELETE}件までです（${canAdd}件追加しました）`,
+        });
+        return;
+      }
+
       const newSet = new Set([...selectedIds, ...documentIds]);
       setSelectedIds(Array.from(newSet));
     } else {
@@ -64,6 +97,15 @@ export function useDocumentDeleteActions(refetch: () => Promise<unknown>) {
 
   const executeBatchDelete = async () => {
     if (selectedIds.length === 0) return;
+
+    // 上限チェック（念のため）
+    if (selectedIds.length > MAX_BATCH_DELETE) {
+      showToast({
+        type: "error",
+        message: `一度に削除できるのは${MAX_BATCH_DELETE}件までです`,
+      });
+      return;
+    }
 
     try {
       setIsBatchDeleting(true);

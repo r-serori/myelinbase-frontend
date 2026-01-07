@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { CONCURRENT_UPLOADS } from "@/features/documents/config/document-constants";
 import { usePostDocumentsUpload } from "@/lib/api/generated/default/default";
 import {
   DocumentResponse,
@@ -43,6 +44,34 @@ export interface UploadResultSummary {
 
 // バックエンド重複エラーコード
 const BACKEND_DUPLICATE_ERROR_CODE = "DOCUMENTS_DUPLICATE_CONTENT";
+
+/**
+ * 並列数を制限してPromiseを実行するユーティリティ
+ * p-limit等の外部ライブラリを使わずに実装
+ */
+async function runWithConcurrency<T>(
+  tasks: (() => Promise<T>)[],
+  concurrency: number
+): Promise<T[]> {
+  const results: T[] = new Array(tasks.length);
+  let currentIndex = 0;
+
+  async function runNext(): Promise<void> {
+    while (currentIndex < tasks.length) {
+      const index = currentIndex++;
+      results[index] = await tasks[index]();
+    }
+  }
+
+  // concurrency数分のワーカーを起動
+  const workers = Array.from(
+    { length: Math.min(concurrency, tasks.length) },
+    () => runNext()
+  );
+
+  await Promise.all(workers);
+  return results;
+}
 
 export function useUpload() {
   const qc = useQueryClient();
@@ -136,9 +165,9 @@ export function useUpload() {
 
       setStatus("uploading");
 
-      // 2. S3へアップロード（並列実行）
-      const uploadPromises = response.results.map(
-        async (result: UploadRequestFileResult) => {
+      // 2. S3へアップロード（並列数制限付き）
+      const uploadTasks = response.results.map(
+        (result: UploadRequestFileResult) => async () => {
           if (result.status !== "success" || !result.data) {
             // エラーの種類を判別
             if (result.errorCode === BACKEND_DUPLICATE_ERROR_CODE) {
@@ -229,7 +258,11 @@ export function useUpload() {
         }
       );
 
-      const uploadedFilesResults = await Promise.all(uploadPromises);
+      // 並列数を制限してアップロード実行
+      const uploadedFilesResults = await runWithConcurrency(
+        uploadTasks,
+        CONCURRENT_UPLOADS
+      );
       const successfulUploads = uploadedFilesResults.filter(
         (item): item is NonNullable<typeof item> => item !== null
       );
