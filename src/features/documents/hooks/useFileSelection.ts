@@ -180,22 +180,17 @@ export function useFileSelection() {
 
     // 新しいファイルのハッシュを計算
     for (const file of files) {
-      try {
-        const hash = await computeFileHash(file);
-        newHashes.set(file.name, hash);
+      const hash = await computeFileHash(file);
+      newHashes.set(file.name, hash);
 
-        // 同じハッシュを持つファイルが既にあるかチェック
-        const existingFileName = hashToFirstFileName.get(hash);
-        if (existingFileName && existingFileName !== file.name) {
-          // 重複を検出
-          duplicates.set(file.name, existingFileName);
-        } else {
-          // 最初のファイルとして登録
-          hashToFirstFileName.set(hash, file.name);
-        }
-      } catch {
-        // ハッシュ計算に失敗した場合はスキップ（重複チェックなしで続行）
-        console.warn(`Failed to compute hash for ${file.name}`);
+      // 同じハッシュを持つファイルが既にあるかチェック
+      const existingFileName = hashToFirstFileName.get(hash);
+      if (existingFileName && existingFileName !== file.name) {
+        // 重複を検出
+        duplicates.set(file.name, existingFileName);
+      } else {
+        // 最初のファイルとして登録
+        hashToFirstFileName.set(hash, file.name);
       }
     }
 
