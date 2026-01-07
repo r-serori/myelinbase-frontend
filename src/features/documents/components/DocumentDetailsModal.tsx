@@ -11,6 +11,7 @@ import {
 
 import StatusChip from "@/features/documents/components/StatusChip";
 import TagChip from "@/features/documents/components/TagChip";
+import { MAX_TAGS } from "@/features/documents/config/document-constants";
 import {
   useDocumentById,
   useGetDocumentDownloadUrl,
@@ -28,7 +29,6 @@ import { patchDocumentsIdTagsBody } from "@/lib/api/generated/zod/default/defaul
 import { handleCommonError } from "@/lib/error-handler";
 
 import { useToast } from "@/providers/ToastProvider";
-
 interface DocumentDetailsContentProps {
   doc: DocumentResponse;
   refetch: () => Promise<unknown>;
@@ -43,8 +43,7 @@ function DocumentDetailsContent({ doc, refetch }: DocumentDetailsContentProps) {
   const [inputValue, setInputValue] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const MAX_TAGS_COUNT = 20;
-  const isOverLimit = editTags.length > MAX_TAGS_COUNT;
+  const isOverLimit = editTags.length > MAX_TAGS;
 
   function toggleTag(tag: string) {
     setEditTags((prev) =>
@@ -188,7 +187,7 @@ function DocumentDetailsContent({ doc, refetch }: DocumentDetailsContentProps) {
               <div className="flex items-center gap-2 text-amber-700 bg-amber-50 p-2.5 rounded-md border border-amber-200">
                 <AlertTriangle className="size-4 shrink-0" />
                 <Text variant="sm" color="muted" weight="medium">
-                  タグの上限（{MAX_TAGS_COUNT}個）を超えています。
+                  タグの上限（{MAX_TAGS}個）を超えています。
                   更新するにはタグを減らしてください。
                 </Text>
               </div>

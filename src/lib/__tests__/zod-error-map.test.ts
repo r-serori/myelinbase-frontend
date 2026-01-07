@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 
+import { MAX_FILES } from "@/features/documents/config/document-constants";
 import { ErrorCode } from "@/lib/api/generated/model";
 
 import { registerZodErrorMap } from "../zod-error-map";
@@ -115,11 +116,11 @@ describe("zod-error-map", () => {
 
     it("maps files array too_big to DOCUMENTS_SELECTION_TOO_MANY", () => {
       const schema = z.object({
-        files: z.array(z.string()).max(20),
+        files: z.array(z.string()).max(MAX_FILES),
       });
 
       const result = schema.safeParse({
-        files: Array(21).fill("file"),
+        files: Array(MAX_FILES + 1).fill("file"),
       });
 
       expect(result.success).toBe(false);

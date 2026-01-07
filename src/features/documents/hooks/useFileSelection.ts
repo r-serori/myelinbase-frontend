@@ -102,18 +102,17 @@ export function useFileSelection() {
     return null;
   }
 
-  // 複数ファイルのプレビュー生成（最初のMAX_PREVIEW_COUNT件のみ詳細）
+  // 複数ファイルのプレビュー生成（最初のMAX_FILES件のみ詳細）
   async function buildPreviews(
     files: File[],
     duplicatesMap: Map<string, string | null>
   ) {
-    const MAX_PREVIEW_COUNT = 20;
     const out: Preview[] = [];
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
 
-      if (i < MAX_PREVIEW_COUNT) {
+      if (i < MAX_FILES) {
         const duplicateOf = duplicatesMap.get(file.name) ?? null;
         const preview = await buildPreviewForFile(file, duplicateOf);
         if (preview) {
