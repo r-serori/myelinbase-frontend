@@ -155,7 +155,7 @@ export default function AiMessage({
         <div className="flex flex-col w-full">
           <div className="rounded-xl px-4 text-sm max-w-full">
             {showLoadingState ? (
-              <p className="thinking-text text-sm">
+              <p className="thinking-text-muted text-sm">
                 Myelin Baseが応答を生成しています...
               </p>
             ) : (

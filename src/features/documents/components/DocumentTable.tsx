@@ -67,28 +67,27 @@ export default function DocumentTable({
     return documents.slice(start, start + PAGE_SIZE);
   }, [documents, currentPage, pageCount]);
 
-  // 現在のページ内の選択可能なドキュメントIDのみを抽出
-  const allPageSelectableIds = useMemo(
+  // 全データの選択可能なドキュメントIDのみを抽出
+  const allSelectableIds = useMemo(
     () =>
-      paginatedDocuments
+      documents
         .filter(
           (d) =>
             d.status !== DocumentStatus.PROCESSING &&
             d.status !== DocumentStatus.PENDING_UPLOAD
         )
         .map((d) => d.documentId),
-    [paginatedDocuments]
+    [documents]
   );
 
   // 選択可能なアイテムが全て選択されているかを確認
   const isAllSelected =
-    allPageSelectableIds.length > 0 &&
-    allPageSelectableIds.every((id) => selectedIds.includes(id));
+    allSelectableIds.length > 0 &&
+    allSelectableIds.every((id) => selectedIds.includes(id));
 
   // 選択可能なアイテムの一部が選択されているかを確認
   const isIndeterminate =
-    allPageSelectableIds.some((id) => selectedIds.includes(id)) &&
-    !isAllSelected;
+    allSelectableIds.some((id) => selectedIds.includes(id)) && !isAllSelected;
 
   const canGoPrev = currentPage > 1;
   const canGoNext = pageCount > 0 && currentPage < pageCount;
@@ -109,7 +108,7 @@ export default function DocumentTable({
             variant="sm"
             weight="semibold"
             color="primary"
-            className="flex items-center"
+            className="flex items-center thinking-text-primary"
           >
             {pendingCount} 件のファイルを処理中
             <span className="loading-dots ml-0.5" />
@@ -205,17 +204,10 @@ export default function DocumentTable({
                     }
                   }}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    const selectableDocs = documents.filter(
-                      (d) =>
-                        d.status !== DocumentStatus.PROCESSING &&
-                        d.status !== DocumentStatus.PENDING_UPLOAD
-                    );
-                    const targetIds = selectableDocs.map((d) => d.documentId);
-
                     if (isIndeterminate) {
-                      onSelectAll?.(targetIds, false);
+                      onSelectAll?.(allSelectableIds, false);
                     } else {
-                      onSelectAll?.(targetIds, e.target.checked);
+                      onSelectAll?.(allSelectableIds, e.target.checked);
                     }
                   }}
                   disabled={loading || documents.length === 0}

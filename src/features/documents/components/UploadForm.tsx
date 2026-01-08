@@ -319,11 +319,12 @@ export default function UploadForm({
         >
           {isProcessing ? (
             <div className="flex flex-col items-center gap-2 py-4">
-              <Spinner size="6" />
-              <Text variant="md" color="muted">
-                ファイルを処理中... ({fileSelectionProgress.current}/
-                {fileSelectionProgress.total})
-              </Text>
+              <Spinner size="6" color="foreground" />
+              <div className="flex items-center gap-1">
+                <Text variant="md" color="muted">
+                  ファイルを処理中...
+                </Text>
+              </div>
             </div>
           ) : (
             <>
@@ -528,7 +529,13 @@ export default function UploadForm({
                   ) : (
                     <Upload className="size-3.5" />
                   )}
-                  <Text variant="sm" color="white" weight="semibold" as="span">
+                  <Text
+                    variant="sm"
+                    color="white"
+                    weight="semibold"
+                    as="span"
+                    className={isUploading ? "thinking-text-button" : ""}
+                  >
                     {isUploading
                       ? "アップロード中..."
                       : duplicateCount > 0

@@ -206,6 +206,57 @@ body {
   animation: thinking-shimmer 3.5s linear infinite;
 }
 
+/* プライマリカラー（青）用 */
+.thinking-text-primary {
+  background: linear-gradient(
+    90deg,
+    #2563eb 0%,
+    #2563eb 25%,
+    #93c5fd 50%,
+    #2563eb 75%,
+    #2563eb 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: thinking-shimmer 3.5s linear infinite;
+}
+
+/* ミュートカラー（グレー）用 */
+.thinking-text-muted {
+  background: linear-gradient(
+    90deg,
+    #595959 0%,
+    #595959 25%,
+    #d1d5db 50%,
+    #595959 75%,
+    #595959 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: thinking-shimmer 3.5s linear infinite;
+}
+
+/* ボタン（濃い背景）用 */
+.thinking-text-button {
+  background: linear-gradient(
+    90deg,
+    #e5e5e5 0%,
+    #e5e5e5 25%,
+    #ffffff 50%,
+    #e5e5e5 75%,
+    #e5e5e5 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: thinking-shimmer 3.5s linear infinite;
+}
+
 @keyframes loading-dots {
   0%,
   20% {

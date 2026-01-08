@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import Spinner from "@/components/ui/Spinner";
 import { Text } from "@/components/ui/Text";
 
 interface DeleteConfirmDialogProps {
@@ -103,7 +105,20 @@ export default function DeleteConfirmDialog({
           disabled={isDeleting || !isMatch}
           className={!isMatch ? "opacity-50 cursor-not-allowed" : ""}
         >
-          {isDeleting ? "削除中..." : "削除する"}
+          {isDeleting ? (
+            <Spinner size="3.5" color="background" />
+          ) : (
+            <Trash2 className="size-3.5" />
+          )}
+          <Text
+            variant="sm"
+            color="white"
+            weight="semibold"
+            as="span"
+            className={isDeleting ? "thinking-text-button" : ""}
+          >
+            {isDeleting ? "削除中..." : "削除する"}
+          </Text>
         </Button>
       </div>
     </Modal>

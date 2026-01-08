@@ -243,7 +243,11 @@ function DocumentDetailsContent({ doc, refetch }: DocumentDetailsContentProps) {
                 ) : (
                   <SendHorizonal className="size-3" />
                 )}
-                <Text variant="sm" color="white">
+                <Text
+                  variant="sm"
+                  color="white"
+                  className={updateTags.isPending ? "thinking-text-button" : ""}
+                >
                   タグを保存
                 </Text>
               </Button>
@@ -265,7 +269,11 @@ function DocumentDetailsContent({ doc, refetch }: DocumentDetailsContentProps) {
             ) : (
               <FileDown className="size-3" />
             )}
-            <Text variant="sm" color="default">
+            <Text
+              variant="sm"
+              color="default"
+              className={getDownloadUrl.isPending ? "thinking-text" : ""}
+            >
               ファイルを開く（プレビュー/ダウンロード）
             </Text>
           </Button>

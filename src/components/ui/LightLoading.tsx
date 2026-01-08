@@ -1,20 +1,32 @@
 import Image from "next/image";
 
-import { Text } from "./Text";
+import { cn } from "@/lib/utils";
 
-export default function LightLoading() {
+interface LightLoadingProps {
+  text?: string;
+  showIcon?: boolean;
+  className?: string;
+}
+
+export default function LightLoading({
+  text = "Loading...",
+  showIcon = true,
+  className,
+}: LightLoadingProps) {
   return (
-    <div className="flex items-center gap-2">
-      <Image
-        src="/images/icon.png"
-        alt="Myelin Base Logo"
-        width={32}
-        height={32}
-        className="object-contain"
-      />
-      <Text variant="xl" color="muted" className="pl-1 thinking-text">
-        Loading...
-      </Text>
+    <div className={cn("flex items-center gap-2", className)}>
+      {showIcon && (
+        <Image
+          src="/images/icon.png"
+          alt="Myelin Base Logo"
+          width={32}
+          height={32}
+          className="object-contain"
+        />
+      )}
+      <span className="text-xl font-semibold pl-1 thinking-text-muted">
+        {text}
+      </span>
     </div>
   );
 }
