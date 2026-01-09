@@ -63,11 +63,11 @@ export default function ChatInput({
 
       <div className="w-full flex items-center justify-center flex-col px-4 pb-6 pt-2">
         <div className="max-w-3xl flex w-full mx-auto bg-background border border-input rounded-[28px] p-2 shadow-sm transition-all duration-200">
-          <div className="flex-1 flex items-center px-2 py-2">
+          <div className="flex-1 flex items-center px-2 py-2 overflow-y-auto">
             <textarea
               id="input-textarea"
               ref={inputRef}
-              className="flex-1 text-sm bg-transparent border-none focus:ring-0 outline-none resize-none overflow-hidden text-foreground placeholder:text-muted-foreground leading-6 ml-2"
+              className="flex-1 text-sm bg-transparent border-none focus:ring-0 outline-none resize-none text-foreground placeholder:text-muted-foreground leading-6 ml-2"
               placeholder="質問を入力してください"
               value={input}
               onChange={(e) => onChangeInput(e.target.value)}
