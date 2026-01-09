@@ -71,13 +71,11 @@ export default function SessionList({
     if (!editingId || !editName.trim()) return;
 
     try {
-      const response = await updateSessionName.mutateAsync({
+      await updateSessionName.mutateAsync({
         sessionId: editingId,
         sessionName: editName.trim(),
       });
-      if (response.status === "success") {
-        showToast({ type: "success", message: "チャット名を更新しました" });
-      }
+      showToast({ type: "success", message: "チャット名を更新しました" });
     } catch (err: unknown) {
       handleCommonError(
         err,
