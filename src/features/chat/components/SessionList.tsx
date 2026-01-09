@@ -49,6 +49,10 @@ export default function SessionList({
   const [errorMessage, setErrorMessage] = useState<string>("");
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // isPendingを取得
+  const isUpdating = updateSessionName.isPending;
+  const isDeleting = deleteSession.isPending;
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -76,6 +80,7 @@ export default function SessionList({
         sessionName: editName.trim(),
       });
       showToast({ type: "success", message: "チャット名を更新しました" });
+      setEditingId(null);
     } catch (err: unknown) {
       handleCommonError(
         err,
@@ -84,7 +89,6 @@ export default function SessionList({
         "チャット名の更新に失敗しました"
       );
     }
-    setEditingId(null);
   };
 
   const handleDelete = async () => {
@@ -96,6 +100,8 @@ export default function SessionList({
         router.replace("/chat");
       }
       showToast({ type: "success", message: "チャットを削除しました" });
+      setDeleteModalOpen(false);
+      setDeleteSessionId(null);
     } catch (err: unknown) {
       handleCommonError(
         err,
@@ -106,8 +112,20 @@ export default function SessionList({
     }
 
     setMenuOpenId(null);
+  };
+
+  // モーダルを閉じる際のハンドラ（処理中は閉じない）
+  const handleEditModalClose = () => {
+    if (isUpdating) return;
+    setEditingId(null);
+    setErrorMessage("");
+  };
+
+  const handleDeleteModalClose = () => {
+    if (isDeleting) return;
     setDeleteModalOpen(false);
     setDeleteSessionId(null);
+    setErrorMessage("");
   };
 
   return (
@@ -142,7 +160,7 @@ export default function SessionList({
           </div>
           {!sidebarCollapsed && (
             <ul className={`space-y-1 px-2 py-2 flex-1 overflow-y-auto`}>
-              {sessions.map((s, index) => {
+              {sessions.map((s) => {
                 const active = s.sessionId === currentSessionId;
                 const isEditing = editingId === s.sessionId;
 
@@ -232,7 +250,7 @@ export default function SessionList({
                       <Modal
                         isOpen={isEditing}
                         title="チャット名を変更"
-                        onClose={() => setEditingId(null)}
+                        onClose={handleEditModalClose}
                         size="md"
                       >
                         <div className="flex flex-col gap-4">
@@ -241,17 +259,53 @@ export default function SessionList({
                             value={editName}
                             onChange={(e) => setEditName(e.target.value)}
                             autoFocus
+                            disabled={isUpdating}
                           />
+                          {errorMessage && (
+                            <Text
+                              variant="sm"
+                              color="destructive"
+                              leading="relaxed"
+                            >
+                              {errorMessage}
+                            </Text>
+                          )}
                           <div className="flex gap-4 justify-end">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setEditingId(null)}
+                              onClick={handleEditModalClose}
+                              disabled={isUpdating}
                             >
                               キャンセル
                             </Button>
-                            <Button size="sm" onClick={handleEditSave}>
-                              保存
+                            <Button
+                              size="sm"
+                              onClick={handleEditSave}
+                              disabled={isUpdating || !editName.trim()}
+                              className={`flex items-center gap-1
+                                ${
+                                  isUpdating || !editName.trim()
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : ""
+                                }`}
+                            >
+                              {isUpdating ? (
+                                <Spinner size="3.5" color="background" />
+                              ) : (
+                                <Edit className="size-3.5" />
+                              )}
+                              <Text
+                                variant="sm"
+                                color="white"
+                                weight="semibold"
+                                as="span"
+                                className={
+                                  isUpdating ? "thinking-text-button" : ""
+                                }
+                              >
+                                {isUpdating ? "保存中..." : "保存"}
+                              </Text>
                             </Button>
                           </div>
                         </div>
@@ -268,7 +322,7 @@ export default function SessionList({
       <Modal
         isOpen={deleteModalOpen}
         title="チャットを削除"
-        onClose={() => setDeleteModalOpen(false)}
+        onClose={handleDeleteModalClose}
       >
         <div className="flex flex-col gap-4">
           <Text variant="md" leading="relaxed">
@@ -283,17 +337,36 @@ export default function SessionList({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setDeleteModalOpen(false)}
+              onClick={handleDeleteModalClose}
+              disabled={isDeleting}
             >
               キャンセル
-            </Button>{" "}
+            </Button>
             <Button
               size="sm"
               variant="destructive"
               onClick={() => handleDelete()}
+              disabled={isDeleting}
+              className={`
+                ${isDeleting ? "opacity-50 cursor-not-allowed" : ""}
+                flex items-center gap-1
+              }`}
             >
-              削除
-            </Button>{" "}
+              {isDeleting ? (
+                <Spinner size="3.5" color="background" />
+              ) : (
+                <Trash className="size-3.5" />
+              )}
+              <Text
+                variant="sm"
+                color="white"
+                weight="semibold"
+                as="span"
+                className={isDeleting ? "thinking-text-button" : ""}
+              >
+                {isDeleting ? "削除中..." : "削除"}
+              </Text>
+            </Button>
           </div>
         </div>
       </Modal>

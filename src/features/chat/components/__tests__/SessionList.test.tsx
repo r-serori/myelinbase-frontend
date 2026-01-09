@@ -7,6 +7,10 @@ import SessionList from "../SessionList";
 const mutateUpdateName = vi.fn();
 const mutateDeleteSession = vi.fn();
 
+// デフォルトのモック状態を保持する変数
+let mockUpdatePending = false;
+let mockDeletePending = false;
+
 vi.mock("@/features/chat/hooks/useSessions", () => ({
   useSessions: () => ({
     data: {
@@ -29,11 +33,11 @@ vi.mock("@/features/chat/hooks/useSessions", () => ({
   }),
   useUpdateSessionName: () => ({
     mutateAsync: mutateUpdateName,
-    isPending: false,
+    isPending: mockUpdatePending,
   }),
   useDeleteSession: () => ({
     mutateAsync: mutateDeleteSession,
-    isPending: false,
+    isPending: mockDeletePending,
   }),
 }));
 
@@ -72,6 +76,8 @@ describe("SessionList", () => {
     vi.clearAllMocks();
     mutateUpdateName.mockResolvedValue({ status: "success" });
     mutateDeleteSession.mockResolvedValue({ status: "success" });
+    mockUpdatePending = false;
+    mockDeletePending = false;
   });
 
   it("renders session list", () => {
@@ -168,6 +174,112 @@ describe("SessionList", () => {
 
     await waitFor(() => {
       expect(mutateDeleteSession).toHaveBeenCalledWith("1");
+    });
+  });
+
+  // ローディング状態のテスト
+  describe("Loading states", () => {
+    it("shows loading state when updating session name", async () => {
+      // isPendingをtrueに設定
+      mockUpdatePending = true;
+
+      render(<SessionList {...defaultProps} />);
+
+      // メニューを開く
+      const link = document.getElementById("session-link-1");
+      const menuButton = link?.parentElement?.querySelector("button");
+      fireEvent.click(menuButton!);
+
+      // 編集ボタンクリック
+      fireEvent.click(screen.getByText("名前を変更"));
+
+      // モーダルが表示される
+      expect(screen.getByText("チャット名を変更")).toBeInTheDocument();
+
+      // ローディング状態の確認
+      expect(screen.getByText("保存中...")).toBeInTheDocument();
+
+      // 入力が無効化されている
+      const input = screen.getByDisplayValue("Session 1");
+      expect(input).toBeDisabled();
+
+      // キャンセルボタンが無効化されている
+      const cancelButton = screen.getByText("キャンセル").closest("button");
+      expect(cancelButton).toBeDisabled();
+
+      // 保存ボタンが無効化されている
+      const saveButton = screen.getByText("保存中...").closest("button");
+      expect(saveButton).toBeDisabled();
+    });
+
+    it("shows loading state when deleting session", async () => {
+      // isPendingをtrueに設定
+      mockDeletePending = true;
+
+      render(<SessionList {...defaultProps} />);
+
+      // メニューを開く
+      const link = document.getElementById("session-link-1");
+      const menuButton = link?.parentElement?.querySelector("button");
+      fireEvent.click(menuButton!);
+
+      // 削除ボタンクリック（メニュー内）
+      const menuDeleteButton = screen.getByText("削除");
+      fireEvent.click(menuDeleteButton);
+
+      // モーダルが表示される
+      expect(screen.getByText("チャットを削除")).toBeInTheDocument();
+
+      // ローディング状態の確認
+      expect(screen.getByText("削除中...")).toBeInTheDocument();
+
+      // キャンセルボタンが無効化されている
+      const cancelButton = screen.getByText("キャンセル").closest("button");
+      expect(cancelButton).toBeDisabled();
+
+      // 削除ボタンが無効化されている
+      const deleteButton = screen.getByText("削除中...").closest("button");
+      expect(deleteButton).toBeDisabled();
+    });
+
+    it("disables save button when input is empty", () => {
+      render(<SessionList {...defaultProps} />);
+
+      // メニューを開く
+      const link = document.getElementById("session-link-1");
+      const menuButton = link?.parentElement?.querySelector("button");
+      fireEvent.click(menuButton!);
+
+      // 編集ボタンクリック
+      fireEvent.click(screen.getByText("名前を変更"));
+
+      // 入力を空にする
+      const input = screen.getByDisplayValue("Session 1");
+      fireEvent.change(input, { target: { value: "" } });
+
+      // 保存ボタンが無効化されている
+      const saveButton = screen.getByText("保存").closest("button");
+      expect(saveButton).toBeDisabled();
+    });
+
+    it("disables save button when input is only whitespace", () => {
+      render(<SessionList {...defaultProps} />);
+
+      // メニューを開く
+      const link = document.getElementById("session-link-1");
+      const menuButton = link?.parentElement?.querySelector("button");
+      fireEvent.click(menuButton!);
+
+      // 編集ボタンクリック
+      fireEvent.click(screen.getByText("名前を変更"));
+
+      // 入力を空白のみにする
+      const input = screen.getByDisplayValue("Session 1");
+      fireEvent.change(input, { target: { value: "   " } });
+
+      // 保存ボタンが無効化されている
+      const saveButton = screen.getByText("保存").closest("button");
+      expect(saveButton).toBeDisabled();
     });
   });
 });
