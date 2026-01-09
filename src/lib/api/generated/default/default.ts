@@ -30,7 +30,6 @@ import type {
   DeleteDocumentErrorResponse,
   DeleteDocumentResponse,
   DeleteSessionErrorResponse,
-  DeleteSessionResponse,
   ErrorResponse,
   GetChatSessionsSessionIdParams,
   GetDocumentDownloadUrlErrorResponse,
@@ -43,13 +42,10 @@ import type {
   GetSessionsResponse,
   SubmitFeedbackErrorResponse,
   SubmitFeedbackRequest,
-  SubmitFeedbackResponse,
   UpdateSessionNameErrorResponse,
   UpdateSessionNameRequest,
-  UpdateSessionNameResponse,
   UpdateTagsErrorResponse,
   UpdateTagsRequest,
-  UpdateTagsResponse,
   UploadRequestErrorResponse,
   UploadRequestRequest,
   UploadRequestResponse,
@@ -162,7 +158,7 @@ export const postChatFeedback = (
   options?: SecondParameter<typeof customInstance>,
   signal?: AbortSignal
 ) => {
-  return customInstance<SubmitFeedbackResponse>(
+  return customInstance<void>(
     {
       url: `/chat/feedback`,
       method: "POST",
@@ -590,7 +586,7 @@ export const patchChatSessionsSessionId = (
   updateSessionNameRequest: UpdateSessionNameRequest,
   options?: SecondParameter<typeof customInstance>
 ) => {
-  return customInstance<UpdateSessionNameResponse>(
+  return customInstance<void>(
     {
       url: `/chat/sessions/${sessionId}`,
       method: "PATCH",
@@ -681,7 +677,7 @@ export const deleteChatSessionsSessionId = (
   sessionId: string,
   options?: SecondParameter<typeof customInstance>
 ) => {
-  return customInstance<DeleteSessionResponse>(
+  return customInstance<void>(
     { url: `/chat/sessions/${sessionId}`, method: "DELETE" },
     options
   );
@@ -1495,7 +1491,7 @@ export const patchDocumentsIdTags = (
   updateTagsRequest: UpdateTagsRequest,
   options?: SecondParameter<typeof customInstance>
 ) => {
-  return customInstance<UpdateTagsResponse>(
+  return customInstance<void>(
     {
       url: `/documents/${id}/tags`,
       method: "PATCH",

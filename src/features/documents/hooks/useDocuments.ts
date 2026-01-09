@@ -15,7 +15,6 @@ import {
   DeleteDocumentResponse,
   GetDocumentResponse,
   GetDocumentsResponse,
-  UpdateTagsResponse,
 } from "@/lib/api/generated/model";
 import { queryKeys } from "@/lib/queryKeys";
 
@@ -179,29 +178,32 @@ export function useUpdateDocumentTags() {
   const mutation = usePatchDocumentsIdTags({
     mutation: {
       onSuccess: (
-        data: UpdateTagsResponse,
+        _data,
         variables: { id: string; data: { tags: string[] } }
       ) => {
-        // 1. 詳細画面のキャッシュを更新
+        // 詳細画面のキャッシュを更新
         qc.setQueryData<GetDocumentResponse>(
           getGetDocumentsIdQueryKey(variables.id),
-          () => {
-            return { document: data.document };
-          }
+          (old) =>
+            old
+              ? { document: { ...old.document, tags: variables.data.tags } }
+              : old
         );
 
-        // 2. 一覧画面のキャッシュを更新
+        // 一覧画面のキャッシュを更新
         qc.setQueriesData<GetDocumentsResponse>(
           { queryKey: queryKeys.documents },
-          (oldData) => {
-            if (!oldData?.documents) return oldData;
-            return {
-              ...oldData,
-              documents: oldData.documents.map((doc) =>
-                doc.documentId === variables.id ? data.document : doc
-              ),
-            };
-          }
+          (old) =>
+            old
+              ? {
+                  ...old,
+                  documents: old.documents.map((doc) =>
+                    doc.documentId === variables.id
+                      ? { ...doc, tags: variables.data.tags }
+                      : doc
+                  ),
+                }
+              : old
         );
       },
     },
@@ -209,15 +211,13 @@ export function useUpdateDocumentTags() {
 
   return {
     ...mutation,
-    mutateAsync: async (payload: { documentId: string; tags: string[] }) => {
-      return mutation.mutateAsync({
+    mutateAsync: async (payload: { documentId: string; tags: string[] }) =>
+      mutation.mutateAsync({
         id: payload.documentId,
         data: { tags: payload.tags },
-      });
-    },
+      }),
   };
 }
-
 export function useGetDocumentDownloadUrl() {
   return useMutation({
     mutationFn: async (documentId: string) =>

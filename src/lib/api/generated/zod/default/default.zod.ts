@@ -69,26 +69,6 @@ export const postChatFeedbackBody = zod.object({
     .optional(),
 });
 
-export const postChatFeedbackResponse = zod.object({
-  item: zod.object({
-    historyId: zod.string(),
-    sessionId: zod.string(),
-    userQuery: zod.string(),
-    aiResponse: zod.string(),
-    sourceDocuments: zod.array(
-      zod.object({
-        text: zod.string(),
-        fileName: zod.string(),
-        documentId: zod.string(),
-        score: zod.number(),
-      })
-    ),
-    feedback: zod.enum(["NONE", "GOOD", "BAD"]),
-    createdAt: zod.string(),
-    updatedAt: zod.string().optional(),
-  }),
-});
-
 /**
  * @summary List Sessions
  */
@@ -155,24 +135,10 @@ export const patchChatSessionsSessionIdBody = zod.object({
     .max(patchChatSessionsSessionIdBodySessionNameMax),
 });
 
-export const patchChatSessionsSessionIdResponse = zod.object({
-  session: zod.object({
-    sessionId: zod.string(),
-    sessionName: zod.string(),
-    createdAt: zod.string(),
-    lastMessageAt: zod.string(),
-    updatedAt: zod.string().optional(),
-  }),
-});
-
 /**
  * @summary Delete Session
  */
 export const deleteChatSessionsSessionIdParams = zod.object({
-  sessionId: zod.string(),
-});
-
-export const deleteChatSessionsSessionIdResponse = zod.object({
   sessionId: zod.string(),
 });
 
@@ -340,28 +306,4 @@ export const patchDocumentsIdTagsBody = zod.object({
   tags: zod
     .array(zod.string().max(patchDocumentsIdTagsBodyTagsItemMax))
     .max(patchDocumentsIdTagsBodyTagsMax),
-});
-
-export const patchDocumentsIdTagsResponse = zod.object({
-  document: zod.object({
-    documentId: zod.string(),
-    fileName: zod.string(),
-    contentType: zod.string(),
-    fileSize: zod.number(),
-    tags: zod.array(zod.string()),
-    status: zod.enum([
-      "PENDING_UPLOAD",
-      "PROCESSING",
-      "COMPLETED",
-      "FAILED",
-      "DELETED",
-      "DELETE_FAILED",
-    ]),
-    createdAt: zod.iso.datetime({}),
-    updatedAt: zod.iso.datetime({}),
-    tagUpdatedAt: zod.iso.datetime({}).optional(),
-    processingStatus: zod.string().optional(),
-    errorMessage: zod.string().optional(),
-    downloadUrl: zod.string().optional(),
-  }),
 });
