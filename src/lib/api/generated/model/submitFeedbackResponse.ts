@@ -5,10 +5,8 @@
  * API documentation for Myelin Base RAG backend
  * OpenAPI spec version: 1.0.0
  */
-import type { SubmitFeedbackResponseStatus } from "./submitFeedbackResponseStatus";
 import type { ChatMessage } from "./chatMessage";
 
 export interface SubmitFeedbackResponse {
-  status: SubmitFeedbackResponseStatus;
   item: ChatMessage;
 }

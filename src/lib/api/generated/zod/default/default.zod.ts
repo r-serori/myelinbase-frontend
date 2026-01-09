@@ -70,7 +70,6 @@ export const postChatFeedbackBody = zod.object({
 });
 
 export const postChatFeedbackResponse = zod.object({
-  status: zod.enum(["success"]),
   item: zod.object({
     historyId: zod.string(),
     sessionId: zod.string(),
@@ -157,7 +156,6 @@ export const patchChatSessionsSessionIdBody = zod.object({
 });
 
 export const patchChatSessionsSessionIdResponse = zod.object({
-  status: zod.enum(["success"]),
   session: zod.object({
     sessionId: zod.string(),
     sessionName: zod.string(),
@@ -175,7 +173,7 @@ export const deleteChatSessionsSessionIdParams = zod.object({
 });
 
 export const deleteChatSessionsSessionIdResponse = zod.object({
-  status: zod.enum(["success"]),
+  sessionId: zod.string(),
 });
 
 /**

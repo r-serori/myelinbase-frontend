@@ -5,8 +5,7 @@
  * API documentation for Myelin Base RAG backend
  * OpenAPI spec version: 1.0.0
  */
-import type { DeleteSessionResponseStatus } from "./deleteSessionResponseStatus";
 
 export interface DeleteSessionResponse {
-  status: DeleteSessionResponseStatus;
+  sessionId: string;
 }

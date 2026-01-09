@@ -5,10 +5,8 @@
  * API documentation for Myelin Base RAG backend
  * OpenAPI spec version: 1.0.0
  */
-import type { UpdateSessionNameResponseStatus } from "./updateSessionNameResponseStatus";
 import type { ChatSession } from "./chatSession";
 
 export interface UpdateSessionNameResponse {
-  status: UpdateSessionNameResponseStatus;
   session: ChatSession;
 }
