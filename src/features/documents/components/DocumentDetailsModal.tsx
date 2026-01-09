@@ -233,7 +233,6 @@ function DocumentDetailsContent({ doc, refetch }: DocumentDetailsContentProps) {
                 disabled={
                   updateTags.isPending ||
                   isOverLimit ||
-                  editTags.length === 0 ||
                   editTags.map((t) => t.toLowerCase()).join(",") ===
                     doc.tags?.map((t) => t.toLowerCase()).join(",")
                 }
