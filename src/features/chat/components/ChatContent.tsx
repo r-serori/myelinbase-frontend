@@ -27,6 +27,7 @@ import {
   MessageSummary,
   SourceDocument,
 } from "@/lib/api/generated/model";
+import { env } from "@/lib/env";
 import { getErrorMessage } from "@/lib/error-mapping";
 import { queryKeys } from "@/lib/queryKeys";
 
@@ -70,7 +71,7 @@ export default function ChatContent({
 
   const transport = useMemo(() => {
     return new DefaultChatTransport({
-      api: `${process.env.NEXT_PUBLIC_API_BASE_URL}/chat/stream`,
+      api: `${env.NEXT_PUBLIC_CHAT_AGENT_URL}/chat/stream`,
       headers: async (): Promise<Record<string, string>> => {
         const token = await getJwt();
         const headers: Record<string, string> = {
