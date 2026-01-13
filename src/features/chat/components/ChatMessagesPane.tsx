@@ -95,10 +95,9 @@ export default function ChatMessagesPane({
                 ? streamingAnswer || ""
                 : m.aiResponse || "";
 
-          const displayDocuments =
-            isGenerating && streamingCitations && streamingCitations.length > 0
-              ? streamingCitations
-              : m.sourceDocuments;
+          const displayDocuments = isGenerating
+            ? streamingCitations || []
+            : m.sourceDocuments;
 
           const displayUserQuery =
             m.historyId === redoingHistoryId &&
