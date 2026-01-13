@@ -102,7 +102,7 @@ export default function ChatContent({
       const sessionInfoSessionId = sessionInfo?.sessionId;
 
       if (sessionInfo && streamingDataRef.current) {
-        const { userQuery, aiResponse, citations } = streamingDataRef.current;
+        const { userQuery, aiResponse } = streamingDataRef.current;
         const { historyId, createdAt } = sessionInfo;
 
         if (sessionInfoSessionId) {
@@ -113,7 +113,7 @@ export default function ChatContent({
           historyId,
           userQuery,
           aiResponse,
-          sourceDocuments: citations,
+          sourceDocuments: extractCitationsFromMessage(message) ?? [],
           feedback: FeedbackType.NONE,
           createdAt,
         };

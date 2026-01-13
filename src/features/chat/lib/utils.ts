@@ -24,6 +24,7 @@ function isSourceDocumentPart(part: unknown): part is {
   sourceId: string;
   mediaType: string;
   title: string;
+  providerMetadata?: { text?: string; score?: number };
 } {
   if (!isObject(part)) return false;
   return part.type === "source-document" && typeof part.sourceId === "string";
@@ -73,6 +74,19 @@ export function extractTextFromMessage(message: UIMessage): string {
  * メッセージから参照ドキュメント（citations）を抽出する
  * AI SDK 6+ UI Message Stream Protocol:
  * - source-document パート
+ * - providerMetadata に score と text が含まれている
+ writer.write({
+            type: "source-document",
+            sourceId: citation.documentId,
+            mediaType: "text/plain",
+            title: citation.fileName,
+            providerMetadata: JSON.parse(
+              JSON.stringify({
+                score: citation.score,
+                text: citation.text,
+              })
+            ),
+          });
  */
 export function extractCitationsFromMessage(
   message: UIMessage
@@ -81,16 +95,16 @@ export function extractCitationsFromMessage(
     return undefined;
   }
 
-  const parts = message.parts as unknown[];
+  const parts = message.parts;
   const sourceDocuments: SourceDocument[] = [];
 
   for (const part of parts) {
     if (isSourceDocumentPart(part)) {
       sourceDocuments.push({
-        text: "",
+        text: (part.providerMetadata as { text: string })?.text || "",
         fileName: part.title || "",
         documentId: part.sourceId || "",
-        score: 0,
+        score: (part.providerMetadata as { score: number })?.score || 0,
       });
     }
   }
