@@ -253,11 +253,9 @@ export default function ChatContent({
     isError,
     error,
   } = useSessionMessages(effectiveSessionId, 30, "desc", {
-    enabled:
-      !!effectiveSessionId &&
-      !isStreamingAnswer &&
-      localSessionId === sessionId,
+    enabled: !!effectiveSessionId && !isStreamingAnswer,
   });
+
   useQueryErrorToast(isError, error);
 
   const feedbackMutation = useChatFeedback();
