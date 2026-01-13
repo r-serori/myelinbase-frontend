@@ -87,6 +87,21 @@ describe("chat/lib/utils", () => {
       const result = extractTextFromMessage(message);
       expect(result).toBe("");
     });
+
+    it("extracts text from message with mixed text and text-delta parts", () => {
+      const message: UIMessage = {
+        id: "1",
+        role: "assistant",
+        parts: [
+          { type: "text", text: "Hello" },
+          { type: "text-delta", textDelta: " from" },
+          { type: "text-delta", textDelta: " World" },
+        ],
+      } as UIMessage;
+
+      const result = extractTextFromMessage(message);
+      expect(result).toBe("Hello from World");
+    });
   });
 
   describe("extractCitationsFromMessage", () => {

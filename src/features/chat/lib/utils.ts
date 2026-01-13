@@ -1,46 +1,56 @@
 import { UIMessage } from "ai";
 
+import type {
+  DataChunk,
+  ErrorChunk,
+  FinishChunk,
+  SourceChunk,
+  TextDeltaChunk,
+  TextUIPart,
+} from "@/lib/api/generated/model";
 import { SessionInfoPayload, SourceDocument } from "@/lib/api/generated/model";
-
-type TextPart = {
-  type: "text";
-  text: string;
-};
-
-type SourcePart = {
-  type: "source";
-  source: {
-    sourceId: string;
-    title: string;
-    url?: string;
-  };
-};
-
-/**
- * データパート
- * {"type":"data","data":[...]}
- */
-type DataPart = {
-  type: "data";
-  data: unknown[];
-};
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
 /**
+ * エラーパートかどうかの判定
+ */
+function isErrorPart(part: unknown): part is ErrorChunk {
+  if (!isObject(part)) return false;
+  return part.type === "error" && typeof part.errorText === "string";
+}
+
+/**
+ * 終了パートかどうかの判定
+ */
+function isFinishPart(part: unknown): part is FinishChunk {
+  if (!isObject(part)) return false;
+  return part.type === "finish" && typeof part.finishReason === "string";
+}
+
+/**
  * テキストパートかどうかの判定
  */
-function isTextPart(part: unknown): part is TextPart {
+function isTextPart(part: unknown): part is TextUIPart {
   if (!isObject(part)) return false;
   return part.type === "text" && typeof part.text === "string";
 }
 
 /**
+ * テキストデルタパートかどうかの判定
+ * AI SDK v6 では text-delta チャンクが parts に格納される場合がある
+ */
+function isTextDeltaPart(part: unknown): part is TextDeltaChunk {
+  if (!isObject(part)) return false;
+  return part.type === "text-delta" && typeof part.textDelta === "string";
+}
+
+/**
  * ソースパートかどうかの判定
  */
-function isSourcePart(part: unknown): part is SourcePart {
+function isSourcePart(part: unknown): part is SourceChunk {
   if (!isObject(part)) return false;
   if (part.type !== "source") return false;
   if (!isObject(part.source)) return false;
@@ -51,21 +61,9 @@ function isSourcePart(part: unknown): part is SourcePart {
  * データパートかどうかの判定
  * {"type":"data","data":[...]}
  */
-function isDataPart(part: unknown): part is DataPart {
+function isDataPart(part: unknown): part is DataChunk {
   if (!isObject(part)) return false;
   return part.type === "data" && Array.isArray(part.data);
-}
-
-/**
- * SessionInfoPayload型ガード
- */
-function isSessionInfoPayload(value: unknown): value is SessionInfoPayload {
-  if (!isObject(value)) return false;
-  return (
-    typeof value.sessionId === "string" &&
-    typeof value.historyId === "string" &&
-    typeof value.createdAt === "string"
-  );
 }
 
 /**
@@ -95,16 +93,25 @@ function isSessionInfoItem(
 
 /**
  * メッセージからテキスト部分を抽出して結合する
+ * AI SDK v6 では text パートと text-delta パートの両方を処理する必要がある
  */
 export function extractTextFromMessage(message: UIMessage): string {
   if (!message.parts || !Array.isArray(message.parts)) {
     return "";
   }
 
-  return (message.parts as unknown[])
-    .filter(isTextPart)
-    .map((part) => part.text)
-    .join("");
+  const parts = message.parts as unknown[];
+  const textParts: string[] = [];
+
+  for (const part of parts) {
+    if (isTextPart(part)) {
+      textParts.push(part.text);
+    } else if (isTextDeltaPart(part)) {
+      textParts.push(part.textDelta);
+    }
+  }
+
+  return textParts.join("");
 }
 
 /**
