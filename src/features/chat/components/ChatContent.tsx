@@ -1,6 +1,5 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
@@ -44,7 +43,6 @@ export default function ChatContent({
   isDocumentPreviewOpen: boolean;
   onSourceClick?: (doc: SourceDocument) => void;
 }) {
-  const router = useRouter();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -155,11 +153,13 @@ export default function ChatContent({
 
       const finalSessionId = sessionInfoSessionId ?? localSessionId;
       if (finalSessionId && finalSessionId !== sessionId) {
-        router.replace(`/chat?sessionId=${finalSessionId}`, {
-          scroll: false,
-        });
+        const newUrl = `/chat?sessionId=${finalSessionId}`;
+        window.history.replaceState(
+          { ...window.history.state, as: newUrl, url: newUrl },
+          "",
+          newUrl
+        );
       }
-
       void queryClient.invalidateQueries({
         queryKey: queryKeys.sessions,
       });

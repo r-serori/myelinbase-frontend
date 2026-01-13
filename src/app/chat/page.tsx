@@ -1,11 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import RequireAuth from "@/features/auth/components/RequireAuth";
 import ChatContent from "@/features/chat/components/ChatContent";
 import DocumentPreviewSidebar from "@/features/chat/components/DocumentPreviewSidebar";
 import SessionSideBar from "@/features/chat/components/SessionSideBar";
+import { useChatStore } from "@/features/chat/hooks/useChatStore";
 import { SourceDocument } from "@/lib/api/generated/model";
 
 export default function ChatPage() {
@@ -19,8 +20,23 @@ export default function ChatPage() {
 function Main() {
   const router = useRouter();
   const search = useSearchParams();
+  const urlSessionId = search.get("sessionId") || undefined;
 
-  const currentSessionId = search.get("sessionId") || undefined;
+  // StoreからローカルのセッションIDを取得
+  const { localSessionId, setLocalSessionId } = useChatStore();
+
+  // 【重要】優先順位: URL(urlSessionId) > Store(localSessionId)
+  // 1. SessionListからの遷移時: URLパラメータが変わるので、即座に新しいIDが反映されます。
+  // 2. 新規作成後のreplaceState時: URLパラメータは検知されない(undefined)ため、StoreのIDが使われます。
+  const currentSessionId = urlSessionId ?? localSessionId;
+
+  // URLが変わった場合（ブラウザの戻る/進む、SessionListクリック時）
+  // StoreをURLの値に同期させて、整合性を保ちます
+  useEffect(() => {
+    if (urlSessionId && urlSessionId !== localSessionId) {
+      setLocalSessionId(urlSessionId);
+    }
+  }, [urlSessionId, setLocalSessionId, localSessionId]);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -35,7 +51,9 @@ function Main() {
         sidebarCollapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
         onNewChat={() => {
-          router.replace("/chat");
+          // 新規チャット時はStoreをリセットしてから遷移
+          setLocalSessionId(undefined);
+          router.push("/chat");
         }}
       />
 
@@ -45,7 +63,7 @@ function Main() {
         } ${activeDocument ? "mr-0 md:mr-[600px]" : ""}`}
       >
         <ChatContent
-          sessionId={currentSessionId}
+          sessionId={urlSessionId} // ChatContent内でも localSessionId とのマージが行われます
           isDocumentPreviewOpen={!!activeDocument}
           sidebarCollapsed={sidebarCollapsed}
           onSourceClick={(doc) => setActiveDocument(doc)}
