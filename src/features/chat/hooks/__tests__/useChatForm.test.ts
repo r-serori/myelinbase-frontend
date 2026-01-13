@@ -23,7 +23,6 @@ vi.mock("@/features/chat/hooks/useSpeechRecognition", () => ({
 describe("useChatForm", () => {
   const mockOnSubmit = vi.fn();
   const mockStop = vi.fn();
-  const mockOnNewSessionCreated = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -124,8 +123,7 @@ describe("useChatForm", () => {
         setInputState,
         mockOnSubmit,
         false,
-        mockStop,
-        mockOnNewSessionCreated
+        mockStop
       );
     });
 
@@ -133,7 +131,6 @@ describe("useChatForm", () => {
       await result.current.doSend();
     });
 
-    expect(mockOnNewSessionCreated).toHaveBeenCalledWith(mockUUID);
     expect(mockOnSubmit).toHaveBeenCalledWith({
       body: { sessionId: mockUUID },
       query: "hello",

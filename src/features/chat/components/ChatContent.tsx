@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
@@ -275,13 +275,6 @@ export default function ChatContent({
     isFetchingNextPage
   );
 
-  const handleNewSessionCreated = useCallback(
-    (newSessionId: string) => {
-      setLocalSessionId(newSessionId);
-    },
-    [setLocalSessionId]
-  );
-
   const {
     isExpanded,
     setIsExpanded,
@@ -299,8 +292,7 @@ export default function ChatContent({
       await sendMessage({ text: query }, { body });
     },
     isStreamingAnswer,
-    stop,
-    handleNewSessionCreated
+    stop
   );
 
   const handleDoSend = async (

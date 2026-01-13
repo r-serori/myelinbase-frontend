@@ -17,8 +17,6 @@ type SendHandler = (
  * - input, setInput は呼び出し元（ChatWindow）で useState で管理
  * - onSubmit は sendMessage を呼び出すラッパー関数を受け取る
  * - sendMessage({ text }, { body }) の形式で呼び出す
- * - onNewSessionCreated: 新規セッション作成時にセッションIDを通知するコールバック
- *   （URLの更新はストリーミング完了後に行うため、ここでは行わない）
  */
 export function useChatForm(
   sessionId: string | undefined,
@@ -29,8 +27,7 @@ export function useChatForm(
     query: string;
   }) => Promise<void>,
   isStreamingAnswer: boolean,
-  stop: () => void,
-  onNewSessionCreated?: (newSessionId: string) => void
+  stop: () => void
 ) {
   const { showToast } = useToast();
 
@@ -82,12 +79,9 @@ export function useChatForm(
       return;
     }
 
-    // セッションIDがない場合は新規作成
-    // URLの更新はストリーミング完了後に行うため、ここではコールバックで通知のみ
     let targetSessionId = sessionId;
     if (!targetSessionId) {
       targetSessionId = crypto.randomUUID();
-      onNewSessionCreated?.(targetSessionId);
     }
 
     const isRedo = !!options?.redoHistoryId;
