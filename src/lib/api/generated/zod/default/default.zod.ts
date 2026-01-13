@@ -8,7 +8,7 @@
 import * as zod from "zod";
 
 /**
- * Send messages and receive a streaming response using Vercel AI SDK v3.x UI Message Stream Protocol (NDJSON format).
+ * Send messages and receive a streaming response using AI SDK 6+ UI Message Stream Protocol (SSE format).
  * @summary Chat Streaming
  */
 export const postChatStreamBodySessionIdMax = 100;
