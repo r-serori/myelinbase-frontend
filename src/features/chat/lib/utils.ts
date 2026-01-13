@@ -2,8 +2,6 @@ import { UIMessage } from "ai";
 
 import type {
   DataChunk,
-  ErrorChunk,
-  FinishChunk,
   SourceChunk,
   TextDeltaChunk,
   TextUIPart,
@@ -12,22 +10,6 @@ import { SessionInfoPayload, SourceDocument } from "@/lib/api/generated/model";
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
-}
-
-/**
- * エラーパートかどうかの判定
- */
-function isErrorPart(part: unknown): part is ErrorChunk {
-  if (!isObject(part)) return false;
-  return part.type === "error" && typeof part.errorText === "string";
-}
-
-/**
- * 終了パートかどうかの判定
- */
-function isFinishPart(part: unknown): part is FinishChunk {
-  if (!isObject(part)) return false;
-  return part.type === "finish" && typeof part.finishReason === "string";
 }
 
 /**
