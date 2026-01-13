@@ -145,7 +145,12 @@ export default function ChatContent({
 
       setMessages([]);
 
+      console.log("localSessionId", localSessionId);
+      console.log("sessionId", sessionId);
+      console.log("localSessionId !== sessionId", localSessionId !== sessionId);
+
       if (localSessionId && localSessionId !== sessionId) {
+        console.log("move to new session");
         router.replace(`/chat?sessionId=${localSessionId}`, { scroll: false });
       }
 
