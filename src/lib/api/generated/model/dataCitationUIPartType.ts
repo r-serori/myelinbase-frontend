@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SourceDocumentUIPartType =
-  (typeof SourceDocumentUIPartType)[keyof typeof SourceDocumentUIPartType];
+export type DataCitationUIPartType =
+  (typeof DataCitationUIPartType)[keyof typeof DataCitationUIPartType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const SourceDocumentUIPartType = {
-  "source-document": "source-document",
+export const DataCitationUIPartType = {
+  "data-citation": "data-citation",
 } as const;

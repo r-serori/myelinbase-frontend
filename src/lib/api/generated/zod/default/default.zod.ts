@@ -27,11 +27,13 @@ export const postChatStreamBody = zod.object({
             text: zod.string(),
           }),
           zod.object({
-            type: zod.enum(["source-document"]),
-            sourceId: zod.string(),
-            mediaType: zod.string(),
-            title: zod.string(),
-            filename: zod.string().optional(),
+            type: zod.enum(["data-citation"]),
+            data: zod.object({
+              sourceId: zod.string(),
+              fileName: zod.string(),
+              text: zod.string(),
+              score: zod.number(),
+            }),
           }),
         ])
       ),

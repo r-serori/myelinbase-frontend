@@ -106,40 +106,45 @@ describe("chat/lib/utils", () => {
   });
 
   describe("extractCitationsFromMessage", () => {
-    it("extracts citations from message with source-document parts", () => {
+    it("extracts citations from message with data-citation parts", () => {
       const message = {
         id: "1",
         role: "assistant",
         parts: [
           {
-            type: "source-document",
-            sourceId: "doc-1",
-            mediaType: "text/plain",
-            title: "Document 1",
+            type: "data-citation",
+            data: {
+              sourceId: "doc-1",
+              fileName: "Document 1",
+              text: "Text 1",
+              score: 0.9,
+            },
           },
           {
-            type: "source-document",
-            sourceId: "doc-2",
-            mediaType: "text/plain",
-            title: "Document 2",
+            type: "data-citation",
+            data: {
+              sourceId: "doc-2",
+              fileName: "Document 2",
+              text: "Text 2",
+              score: 0.8,
+            },
           },
         ],
       } as unknown as UIMessage;
 
       const result = extractCitationsFromMessage(message);
-      // 実装では text は空文字列、fileName は title を使用
       expect(result).toEqual([
         {
-          text: "",
+          text: "Text 1",
           fileName: "Document 1",
           documentId: "doc-1",
-          score: 0,
+          score: 0.9,
         },
         {
-          text: "",
+          text: "Text 2",
           fileName: "Document 2",
           documentId: "doc-2",
-          score: 0,
+          score: 0.8,
         },
       ]);
     });
@@ -166,7 +171,7 @@ describe("chat/lib/utils", () => {
       expect(result).toBeUndefined();
     });
 
-    it("returns undefined when no source-document parts found", () => {
+    it("returns undefined when no data-citation parts found", () => {
       const message = {
         id: "1",
         role: "assistant",
@@ -187,16 +192,19 @@ describe("chat/lib/utils", () => {
       expect(result).toBeUndefined();
     });
 
-    it("handles source-document parts with missing fields", () => {
+    it("handles data-citation parts with missing fields", () => {
       const message = {
         id: "1",
         role: "assistant",
         parts: [
           {
-            type: "source-document",
-            sourceId: "",
-            mediaType: "text/plain",
-            title: "",
+            type: "data-citation",
+            data: {
+              sourceId: "",
+              fileName: "",
+              text: "Text 1",
+              score: 0,
+            },
           },
         ],
       } as unknown as UIMessage;
@@ -204,7 +212,7 @@ describe("chat/lib/utils", () => {
       const result = extractCitationsFromMessage(message);
       expect(result).toEqual([
         {
-          text: "",
+          text: "Text 1",
           fileName: "",
           documentId: "",
           score: 0,
@@ -212,37 +220,46 @@ describe("chat/lib/utils", () => {
       ]);
     });
 
-    it("filters out non-source-document parts", () => {
+    it("filters out non-data-citation parts", () => {
       const message: UIMessage = {
         id: "1",
         role: "assistant",
         parts: [
           { type: "text", text: "Hello" },
           {
-            type: "source-document",
-            sourceId: "doc-1",
-            mediaType: "text/plain",
-            title: "Document 1",
+            type: "data-citation",
+            data: {
+              sourceId: "doc-1",
+              fileName: "Document 1",
+              text: "Text 1",
+              score: 0.9,
+            },
           },
           {
-            type: "data-session-info",
+            type: "data-citation",
             data: {
-              sessionId: "sess-1",
-              historyId: "hist-1",
-              createdAt: "2023-01-01T00:00:00Z",
+              sourceId: "doc-2",
+              fileName: "Document 2",
+              text: "Text 2",
+              score: 0.8,
             },
           },
         ],
       } as UIMessage;
 
       const result = extractCitationsFromMessage(message);
-      // 実装では text は空文字列、fileName は title を使用
       expect(result).toEqual([
         {
-          text: "",
+          text: "Text 1",
           fileName: "Document 1",
           documentId: "doc-1",
-          score: 0,
+          score: 0.9,
+        },
+        {
+          text: "Text 2",
+          fileName: "Document 2",
+          documentId: "doc-2",
+          score: 0.8,
         },
       ]);
     });
@@ -300,10 +317,13 @@ describe("chat/lib/utils", () => {
         parts: [
           { type: "text", text: "Hello" },
           {
-            type: "source-document",
-            sourceId: "doc-1",
-            mediaType: "text/plain",
-            title: "Document 1",
+            type: "data-citation",
+            data: {
+              sourceId: "doc-1",
+              fileName: "Document 1",
+              text: "Text 1",
+              score: 0.9,
+            },
           },
         ],
       } as unknown as UIMessage;
@@ -349,10 +369,13 @@ describe("chat/lib/utils", () => {
             data: sessionInfo,
           },
           {
-            type: "source-document",
-            sourceId: "doc-1",
-            mediaType: "text/plain",
-            title: "Document 1",
+            type: "data-citation",
+            data: {
+              sourceId: "doc-1",
+              fileName: "Document 1",
+              text: "Text 1",
+              score: 0.9,
+            },
           },
         ],
       } as unknown as UIMessage;

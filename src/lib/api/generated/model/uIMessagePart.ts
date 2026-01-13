@@ -6,6 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { TextUIPart } from "./textUIPart";
-import type { SourceDocumentUIPart } from "./sourceDocumentUIPart";
+import type { DataCitationUIPart } from "./dataCitationUIPart";
 
-export type UIMessagePart = TextUIPart | SourceDocumentUIPart;
+export type UIMessagePart = TextUIPart | DataCitationUIPart;

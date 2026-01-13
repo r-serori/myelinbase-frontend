@@ -8,7 +8,6 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 /**
  * AI SDK 6+ テキストパート判定
- * Format: { type: "text", text: "..." }
  */
 function isTextPart(part: unknown): part is { type: "text"; text: string } {
   if (!isObject(part)) return false;
@@ -16,23 +15,7 @@ function isTextPart(part: unknown): part is { type: "text"; text: string } {
 }
 
 /**
- * AI SDK 6+ source-document パート判定
- * Format: { type: "source-document", sourceId: "...", mediaType: "...", title: "..." }
- */
-function isSourceDocumentPart(part: unknown): part is {
-  type: "source-document";
-  sourceId: string;
-  mediaType: string;
-  title: string;
-  providerMetadata?: { text?: string; score?: number };
-} {
-  if (!isObject(part)) return false;
-  return part.type === "source-document" && typeof part.sourceId === "string";
-}
-
-/**
  * AI SDK 6+ data-session-info カスタムデータパート判定
- * Format: { type: "data-session-info", data: { sessionId, historyId, createdAt } }
  */
 function isSessionInfoDataPart(part: unknown): part is {
   type: "data-session-info";
@@ -51,7 +34,6 @@ function isSessionInfoDataPart(part: unknown): part is {
 
 /**
  * メッセージからテキスト部分を抽出して結合する
- * AI SDK 6+ では text パートから抽出
  */
 export function extractTextFromMessage(message: UIMessage): string {
   if (!message.parts || !Array.isArray(message.parts)) {
@@ -71,22 +53,30 @@ export function extractTextFromMessage(message: UIMessage): string {
 }
 
 /**
+ * data-citation のデータペイロードからSourceDocumentへの変換
+ */
+function parseCitationFromDataPayload(data: unknown): SourceDocument | null {
+  if (!isObject(data)) return null;
+  const d = data as Record<string, unknown>;
+
+  if (
+    typeof d.sourceId === "string" &&
+    typeof d.fileName === "string" &&
+    typeof d.text === "string" &&
+    typeof d.score === "number"
+  ) {
+    return {
+      documentId: d.sourceId,
+      fileName: d.fileName,
+      text: d.text,
+      score: d.score,
+    };
+  }
+  return null;
+}
+
+/**
  * メッセージから参照ドキュメント（citations）を抽出する
- * AI SDK 6+ UI Message Stream Protocol:
- * - source-document パート
- * - providerMetadata に score と text が含まれている
- writer.write({
-            type: "source-document",
-            sourceId: citation.documentId,
-            mediaType: "text/plain",
-            title: citation.fileName,
-            providerMetadata: JSON.parse(
-              JSON.stringify({
-                score: citation.score,
-                text: citation.text,
-              })
-            ),
-          });
  */
 export function extractCitationsFromMessage(
   message: UIMessage
@@ -95,17 +85,23 @@ export function extractCitationsFromMessage(
     return undefined;
   }
 
-  const parts = message.parts;
+  const parts = message.parts as unknown[];
   const sourceDocuments: SourceDocument[] = [];
+  const seenIds = new Set<string>();
 
   for (const part of parts) {
-    if (isSourceDocumentPart(part)) {
-      sourceDocuments.push({
-        text: (part.providerMetadata as { text: string })?.text || "",
-        fileName: part.title || "",
-        documentId: part.sourceId || "",
-        score: (part.providerMetadata as { score: number })?.score || 0,
-      });
+    if (!isObject(part)) continue;
+
+    if (part.type === "data-citation" && part.data) {
+      const dataItems = Array.isArray(part.data) ? part.data : [part.data];
+
+      for (const item of dataItems) {
+        const citation = parseCitationFromDataPayload(item);
+        if (citation && !seenIds.has(citation.documentId)) {
+          sourceDocuments.push(citation);
+          seenIds.add(citation.documentId);
+        }
+      }
     }
   }
 
@@ -114,8 +110,6 @@ export function extractCitationsFromMessage(
 
 /**
  * メッセージの parts からセッション情報を抽出する
- * AI SDK 6+ UI Message Stream Protocol:
- * - data-session-info カスタムデータパート
  */
 export function extractSessionInfoFromMessage(
   message: UIMessage
