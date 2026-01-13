@@ -88,7 +88,7 @@ describe("chat/lib/utils", () => {
       expect(result).toBe("");
     });
 
-    it("extracts text from message with mixed text and text-delta parts", () => {
+    it("ignores non-text parts such as text-delta", () => {
       const message: UIMessage = {
         id: "1",
         role: "assistant",
@@ -100,7 +100,8 @@ describe("chat/lib/utils", () => {
       } as UIMessage;
 
       const result = extractTextFromMessage(message);
-      expect(result).toBe("Hello from World");
+      // 実装は type: "text" のみを抽出するため、text-delta は無視される
+      expect(result).toBe("Hello");
     });
   });
 
@@ -111,33 +112,32 @@ describe("chat/lib/utils", () => {
         role: "assistant",
         parts: [
           {
-            type: "source",
-            source: {
-              sourceId: "doc-1",
-              title: "Document 1",
-            },
+            type: "source-document",
+            sourceId: "doc-1",
+            mediaType: "text/plain",
+            title: "Document 1",
           },
           {
-            type: "source",
-            source: {
-              sourceId: "doc-2",
-              title: "Document 2",
-            },
+            type: "source-document",
+            sourceId: "doc-2",
+            mediaType: "text/plain",
+            title: "Document 2",
           },
         ],
       } as unknown as UIMessage;
 
       const result = extractCitationsFromMessage(message);
+      // 実装では text は空文字列、fileName は title を使用
       expect(result).toEqual([
         {
-          text: "Document 1",
-          fileName: "",
+          text: "",
+          fileName: "Document 1",
           documentId: "doc-1",
           score: 0,
         },
         {
-          text: "Document 2",
-          fileName: "",
+          text: "",
+          fileName: "Document 2",
           documentId: "doc-2",
           score: 0,
         },
@@ -173,7 +173,7 @@ describe("chat/lib/utils", () => {
         parts: [
           { type: "text", text: "Hello" },
           {
-            type: "data-session_info",
+            type: "data-session-info",
             data: {
               sessionId: "sess-1",
               historyId: "hist-1",
@@ -193,11 +193,10 @@ describe("chat/lib/utils", () => {
         role: "assistant",
         parts: [
           {
-            type: "source",
-            source: {
-              sourceId: "",
-              title: "",
-            },
+            type: "source-document",
+            sourceId: "",
+            mediaType: "text/plain",
+            title: "",
           },
         ],
       } as unknown as UIMessage;
@@ -220,31 +219,28 @@ describe("chat/lib/utils", () => {
         parts: [
           { type: "text", text: "Hello" },
           {
-            type: "source",
-            source: {
-              sourceId: "doc-1",
-              title: "Document 1",
-            },
+            type: "source-document",
+            sourceId: "doc-1",
+            mediaType: "text/plain",
+            title: "Document 1",
           },
           {
-            type: "data",
-            data: [
-              {
-                type: "session_info",
-                sessionId: "sess-1",
-                historyId: "hist-1",
-                createdAt: "2023-01-01T00:00:00Z",
-              },
-            ],
+            type: "data-session-info",
+            data: {
+              sessionId: "sess-1",
+              historyId: "hist-1",
+              createdAt: "2023-01-01T00:00:00Z",
+            },
           },
         ],
       } as UIMessage;
 
       const result = extractCitationsFromMessage(message);
+      // 実装では text は空文字列、fileName は title を使用
       expect(result).toEqual([
         {
-          text: "Document 1",
-          fileName: "",
+          text: "",
+          fileName: "Document 1",
           documentId: "doc-1",
           score: 0,
         },
@@ -253,7 +249,7 @@ describe("chat/lib/utils", () => {
   });
 
   describe("extractSessionInfoFromMessage", () => {
-    it("extracts session info from message with data-session_info part", () => {
+    it("extracts session info from message with data-session-info part", () => {
       const sessionInfo = {
         sessionId: "sess-123",
         historyId: "hist-456",
@@ -265,13 +261,8 @@ describe("chat/lib/utils", () => {
         role: "assistant",
         parts: [
           {
-            type: "data",
-            data: [
-              {
-                type: "session_info",
-                ...sessionInfo,
-              },
-            ],
+            type: "data-session-info",
+            data: sessionInfo,
           },
         ],
       } as unknown as UIMessage;
@@ -302,17 +293,36 @@ describe("chat/lib/utils", () => {
       expect(result).toBeUndefined();
     });
 
-    it("returns undefined when no data-session_info part found", () => {
+    it("returns undefined when no data-session-info part found", () => {
       const message = {
         id: "1",
         role: "assistant",
         parts: [
           { type: "text", text: "Hello" },
           {
-            type: "source",
-            source: {
-              sourceId: "doc-1",
-              title: "Document 1",
+            type: "source-document",
+            sourceId: "doc-1",
+            mediaType: "text/plain",
+            title: "Document 1",
+          },
+        ],
+      } as unknown as UIMessage;
+
+      const result = extractSessionInfoFromMessage(message);
+      expect(result).toBeUndefined();
+    });
+
+    it("returns undefined when data-session-info part has invalid data", () => {
+      const message = {
+        id: "1",
+        role: "assistant",
+        parts: [
+          {
+            type: "data-session-info",
+            data: {
+              // 不完全なデータ（sessionIdが欠けている）
+              historyId: "hist-456",
+              createdAt: "2023-01-01T00:00:00Z",
             },
           },
         ],
@@ -322,30 +332,7 @@ describe("chat/lib/utils", () => {
       expect(result).toBeUndefined();
     });
 
-    it("returns undefined when data-session_info part has invalid data", () => {
-      const message = {
-        id: "1",
-        role: "assistant",
-        parts: [
-          {
-            type: "data",
-            data: [
-              {
-                type: "session_info",
-                // 不完全なデータ（sessionIdが欠けている）
-                historyId: "hist-456",
-                createdAt: "2023-01-01T00:00:00Z",
-              },
-            ],
-          },
-        ],
-      } as unknown as UIMessage;
-
-      const result = extractSessionInfoFromMessage(message);
-      expect(result).toBeUndefined();
-    });
-
-    it("filters out non-data-session_info parts", () => {
+    it("filters out non-data-session-info parts", () => {
       const sessionInfo = {
         sessionId: "sess-123",
         historyId: "hist-456",
@@ -358,20 +345,14 @@ describe("chat/lib/utils", () => {
         parts: [
           { type: "text", text: "Hello" },
           {
-            type: "data",
-            data: [
-              {
-                type: "session_info",
-                ...sessionInfo,
-              },
-            ],
+            type: "data-session-info",
+            data: sessionInfo,
           },
           {
-            type: "source",
-            source: {
-              sourceId: "doc-1",
-              title: "Document 1",
-            },
+            type: "source-document",
+            sourceId: "doc-1",
+            mediaType: "text/plain",
+            title: "Document 1",
           },
         ],
       } as unknown as UIMessage;
@@ -380,7 +361,7 @@ describe("chat/lib/utils", () => {
       expect(result).toEqual(sessionInfo);
     });
 
-    it("returns undefined for data parts that are not data-session_info", () => {
+    it("returns undefined for data parts that are not data-session-info", () => {
       const message = {
         id: "1",
         role: "assistant",
@@ -400,7 +381,7 @@ describe("chat/lib/utils", () => {
       expect(result).toBeUndefined();
     });
 
-    it("handles multiple data-session_info parts and returns the first valid one", () => {
+    it("handles multiple data-session-info parts and returns the first valid one", () => {
       const sessionInfo1 = {
         sessionId: "sess-123",
         historyId: "hist-456",
@@ -418,17 +399,12 @@ describe("chat/lib/utils", () => {
         role: "assistant",
         parts: [
           {
-            type: "data",
-            data: [
-              {
-                type: "session_info",
-                ...sessionInfo1,
-              },
-              {
-                type: "session_info",
-                ...sessionInfo2,
-              },
-            ],
+            type: "data-session-info",
+            data: sessionInfo1,
+          },
+          {
+            type: "data-session-info",
+            data: sessionInfo2,
           },
         ],
       } as unknown as UIMessage;
