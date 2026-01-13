@@ -170,10 +170,16 @@ export default function ChatContent({
     const currId = sessionId;
 
     if (prevId !== undefined && currId !== undefined && prevId !== currId) {
+      // セッション切り替え（既存セッション → 別の既存セッション）
       resetForSessionSwitch(currId);
       setMessages([]);
     } else if (prevId !== undefined && currId === undefined) {
+      // 新規チャットへ遷移（既存セッション → 新規）
       resetForNewSession();
+      setMessages([]);
+    } else if (prevId === undefined && currId !== undefined) {
+      // 初期表示から既存セッションへ遷移（新規 → 既存セッション）
+      resetForSessionSwitch(currId);
       setMessages([]);
     }
 
