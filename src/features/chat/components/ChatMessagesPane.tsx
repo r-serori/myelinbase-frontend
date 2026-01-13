@@ -57,7 +57,7 @@ export default function ChatMessagesPane({
   const { displayItems } = useMessageGrouping(messages);
 
   const itemsWithPending = [...displayItems];
-  if (pendingUserMessage) {
+  if (pendingUserMessage && !redoingHistoryId) {
     itemsWithPending.push({
       historyId: "pending",
       userQuery: pendingUserMessage,
@@ -100,6 +100,13 @@ export default function ChatMessagesPane({
               ? streamingCitations
               : m.sourceDocuments;
 
+          const displayUserQuery =
+            m.historyId === redoingHistoryId &&
+            isStreaming &&
+            pendingUserMessage
+              ? pendingUserMessage
+              : m.userQuery;
+
           return (
             <div
               key={`${m.historyId}-${current}`}
@@ -108,7 +115,7 @@ export default function ChatMessagesPane({
               style={isLatest ? { minHeight: lastItemMinHeight } : undefined}
             >
               <UserMessage
-                text={m.userQuery}
+                text={displayUserQuery}
                 createdAt={m.createdAt}
                 isLatest={isLatest && current === total}
                 historyId={m.historyId}
