@@ -32,6 +32,8 @@ import { queryKeys } from "@/lib/queryKeys";
 
 import { useToast } from "@/providers/ToastProvider";
 
+const MESSAGES_LIMIT = 30;
+
 export default function ChatContent({
   sessionId,
   sidebarCollapsed,
@@ -120,7 +122,10 @@ export default function ChatContent({
           sessionInfoSessionId ?? effectiveSessionId ?? "";
 
         queryClient.setQueryData<{ pages: GetSessionMessagesResponse[] }>(
-          queryKeys.sessionMessages(targetSessionId),
+          [
+            ...queryKeys.sessionMessages(targetSessionId),
+            { limit: MESSAGES_LIMIT, order: "desc" },
+          ],
           (oldData) => {
             if (!oldData) {
               return {
@@ -252,7 +257,7 @@ export default function ChatContent({
     isFetchingNextPage,
     isError,
     error,
-  } = useSessionMessages(effectiveSessionId, 30, "desc", {
+  } = useSessionMessages(effectiveSessionId, MESSAGES_LIMIT, "desc", {
     enabled: !!effectiveSessionId && !isStreamingAnswer,
   });
 
