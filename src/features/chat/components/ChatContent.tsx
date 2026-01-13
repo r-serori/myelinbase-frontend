@@ -99,10 +99,15 @@ export default function ChatContent({
     transport,
     onFinish: ({ message }) => {
       const sessionInfo = extractSessionInfoFromMessage(message);
+      const sessionInfoSessionId = sessionInfo?.sessionId;
 
       if (sessionInfo && streamingDataRef.current) {
         const { userQuery, aiResponse, citations } = streamingDataRef.current;
         const { historyId, createdAt } = sessionInfo;
+
+        if (sessionInfoSessionId) {
+          setLocalSessionId(sessionInfoSessionId);
+        }
 
         const newMessage: MessageSummary = {
           historyId,
@@ -113,14 +118,17 @@ export default function ChatContent({
           createdAt,
         };
 
+        const targetSessionId =
+          sessionInfoSessionId ?? effectiveSessionId ?? "";
+
         queryClient.setQueryData<{ pages: GetSessionMessagesResponse[] }>(
-          queryKeys.sessionMessages(effectiveSessionId ?? ""),
+          queryKeys.sessionMessages(targetSessionId),
           (oldData) => {
             if (!oldData) {
               return {
                 pages: [
                   {
-                    sessionId: effectiveSessionId ?? "",
+                    sessionId: targetSessionId,
                     messages: [newMessage],
                   },
                 ],
@@ -145,13 +153,11 @@ export default function ChatContent({
 
       setMessages([]);
 
-      console.log("localSessionId", localSessionId);
-      console.log("sessionId", sessionId);
-      console.log("localSessionId !== sessionId", localSessionId !== sessionId);
-
-      if (localSessionId && localSessionId !== sessionId) {
-        console.log("move to new session");
-        router.replace(`/chat?sessionId=${localSessionId}`, { scroll: false });
+      const finalSessionId = sessionInfoSessionId ?? localSessionId;
+      if (finalSessionId && finalSessionId !== sessionId) {
+        router.replace(`/chat?sessionId=${finalSessionId}`, {
+          scroll: false,
+        });
       }
 
       void queryClient.invalidateQueries({
