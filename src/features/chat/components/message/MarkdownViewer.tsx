@@ -115,7 +115,9 @@ export default function MarkdownViewer({ content }: Props) {
               {...props}
             />
           ),
-          li: ({ node, ...props }) => <li className="pl-1" {...props} />,
+          li: ({ node, ...props }) => (
+            <li className="pl-1 leading-relaxed" {...props} />
+          ),
           p: ({ node, ...props }) => (
             <p className="my-2 leading-relaxed text-foreground" {...props} />
           ),
