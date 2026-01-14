@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom"; // 追加
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
@@ -44,12 +45,16 @@ export default function SessionList({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // isPendingを取得
   const isUpdating = updateSessionName.isPending;
   const isDeleting = deleteSession.isPending;
 
@@ -64,6 +69,31 @@ export default function SessionList({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const handleMenuToggle = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    sessionId: string
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (menuOpenId === sessionId) {
+      setMenuOpenId(null);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.top,
+        left: rect.right + 5,
+      });
+      setMenuOpenId(sessionId);
+    }
+  };
+
+  const handleScroll = () => {
+    if (menuOpenId) {
+      setMenuOpenId(null);
+    }
+  };
 
   const handleEditStart = (sessionId: string, currentName: string) => {
     setEditingId(sessionId);
@@ -114,7 +144,6 @@ export default function SessionList({
     setMenuOpenId(null);
   };
 
-  // モーダルを閉じる際のハンドラ（処理中は閉じない）
   const handleEditModalClose = () => {
     if (isUpdating) return;
     setEditingId(null);
@@ -159,7 +188,10 @@ export default function SessionList({
             </ChatTooltip>
           </div>
           {!sidebarCollapsed && (
-            <ul className={`space-y-1 px-2 py-2 flex-1 overflow-y-auto`}>
+            <ul
+              className={`space-y-1 px-2 py-2 flex-1 overflow-y-auto`}
+              onScroll={handleScroll}
+            >
               {sessions.map((s) => {
                 const active = s.sessionId === currentSessionId;
                 const isEditing = editingId === s.sessionId;
@@ -199,52 +231,55 @@ export default function SessionList({
                       <Button
                         variant="close"
                         size="icon"
-                        className={`absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity ${
+                        className={`hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity ${
                           menuOpenId === s.sessionId &&
                           "opacity-100 text-primary"
                         }`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setMenuOpenId(
-                            menuOpenId === s.sessionId ? null : s.sessionId
-                          );
-                        }}
+                        onClick={(e) => handleMenuToggle(e, s.sessionId)}
                       >
                         <MoreVertical className="size-4" />
                       </Button>
-                      {menuOpenId === s.sessionId && (
-                        <div
-                          ref={menuRef}
-                          className="absolute right-0 top-8 w-32 bg-background border rounded shadow-lg z-10 overflow-hidden"
-                        >
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full justify-start text-left flex items-center gap-2"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleEditStart(s.sessionId, s.sessionName);
+
+                      {menuOpenId === s.sessionId &&
+                        menuPosition &&
+                        createPortal(
+                          <div
+                            ref={menuRef}
+                            style={{
+                              position: "fixed",
+                              top: `${menuPosition.top}px`,
+                              left: `${menuPosition.left}px`,
                             }}
+                            className="w-32 bg-background border border-muted rounded shadow-lg z-[9999] overflow-hidden"
                           >
-                            <Edit className="w-3 h-3" />
-                            名前を変更
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full justify-start text-left flex items-center gap-2 text-destructive hover:text-destructive/80"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setDeleteModalOpen(true);
-                              setDeleteSessionId(s.sessionId);
-                            }}
-                          >
-                            <Trash className="w-3 h-3" />
-                            削除
-                          </Button>
-                        </div>
-                      )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-left flex items-center gap-2"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleEditStart(s.sessionId, s.sessionName);
+                              }}
+                            >
+                              <Edit className="w-3 h-3" />
+                              名前を変更
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-left flex items-center gap-2 text-destructive hover:text-destructive/80"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setDeleteModalOpen(true);
+                                setDeleteSessionId(s.sessionId);
+                              }}
+                            >
+                              <Trash className="w-3 h-3" />
+                              削除
+                            </Button>
+                          </div>,
+                          document.body
+                        )}
                     </div>
                     {isEditing && (
                       <Modal
