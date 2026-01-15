@@ -302,7 +302,13 @@ export default function DocumentDetailsModal({
   const doc = data?.document;
 
   return (
-    <Modal isOpen={true} title="ファイル詳細" size="2xl" onClose={onClose}>
+    <Modal
+      isOpen={true}
+      title="ファイル詳細"
+      size="2xl"
+      onClose={onClose}
+      aria-label="ファイル詳細モーダル"
+    >
       <div className="text-sm">
         {isLoading && (
           <div className="flex justify-center items-center py-12 text-gray-500 gap-2">

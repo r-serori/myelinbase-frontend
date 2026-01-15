@@ -16,6 +16,7 @@ export default function TagChip({
   if (isDeleted) {
     return (
       <div
+        aria-label={`タグ: ${tag}`}
         title={tag}
         className="flex items-center gap-1 rounded-full bg-primary/10 text-primary border border-primary/20 h-5 px-1.5 py-0.5 text-xs"
       >
@@ -35,6 +36,7 @@ export default function TagChip({
 
   return (
     <Button
+      aria-label={`タグ: ${tag}`}
       variant="tag"
       size="xxs"
       title={tag}

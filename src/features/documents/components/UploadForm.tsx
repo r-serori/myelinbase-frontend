@@ -49,7 +49,6 @@ export default function UploadForm({
     errorMessage,
     setErrorMessage,
     isProcessing,
-    progress: fileSelectionProgress,
     addFiles,
     removeFile,
     clearFiles,
@@ -406,30 +405,29 @@ export default function UploadForm({
                       >
                         タグ
                       </Text>
-                      <Tooltip position="bottom-8 right-8" circleSize={5}>
+                      <Tooltip position="top-0 left-8" circleSize={5}>
                         <div className="space-y-1">
                           <Text
                             variant="md"
                             weight="semibold"
-                            className="flex items-center gap-1"
+                            className="flex items-center gap-1 pb-1"
                           >
                             <Star className="size-4" />
                             おすすめの方法:
                           </Text>
-                          <br />
-                          <Text variant="md" weight="medium">
+                          <Text variant="md" weight="medium" leading="relaxed">
                             ExplorerまたはFinderのパスを入力することで、ファイルを管理しやすくなります。
                           </Text>
                           <Text variant="md" weight="medium" leading="relaxed">
                             例:
                             <br /> ・パスが下記のファイルを選択した場合:
                             <br />
-                            &nbsp;&nbsp;&nbsp;&nbsp;xxx\MyelinBaseソリューション部\社内資料\20251214就業規則.pdf
+                            &nbsp;&nbsp;&nbsp;&nbsp;xxx\MyelinBase\社内資料\20251214就業規則.pdf
                             <br />
                             ・タグ入力欄に下記を入力:
                             <br />
-                            &nbsp;&nbsp;&nbsp;&nbsp;MyelinBaseソリューション部,
-                            社内資料, 就業規則
+                            &nbsp;&nbsp;&nbsp;&nbsp;MyelinBase, 社内資料,
+                            就業規則
                           </Text>
                         </div>
                       </Tooltip>

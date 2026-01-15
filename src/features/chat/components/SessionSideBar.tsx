@@ -32,6 +32,7 @@ export default function SessionSideBar({
             position="bottom-right"
           >
             <Button
+              aria-label="チャットハンバーガー"
               variant="close"
               size="icon"
               onClick={onToggleCollapsed}

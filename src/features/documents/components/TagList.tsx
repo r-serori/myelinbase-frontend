@@ -96,6 +96,7 @@ export default function TagList({
 
         {hiddenTags.length > 0 && (
           <Button
+            aria-label="すべてのタグを表示"
             variant="outline"
             size="xxs"
             className={`shadow-none ${
@@ -128,6 +129,7 @@ export default function TagList({
                 タグ一覧 ({tags.length})
               </Text>
               <Button
+                aria-label="タグ一覧を閉じる"
                 variant="iconSmall"
                 size="iconSmall"
                 onClick={() => setIsOpen(false)}

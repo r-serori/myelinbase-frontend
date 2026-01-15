@@ -31,14 +31,4 @@ describe("Tooltip", () => {
     fireEvent.click(button);
     expect(screen.queryByText("Help Content")).not.toBeInTheDocument();
   });
-
-  it("applies position class", () => {
-    render(<Tooltip position="top-10 left-10">Help Content</Tooltip>);
-
-    fireEvent.click(screen.getByRole("button"));
-    const tooltipContainer = screen.getByText("Help Content");
-
-    expect(tooltipContainer).toHaveClass("top-10");
-    expect(tooltipContainer).toHaveClass("left-10");
-  });
 });

@@ -124,6 +124,7 @@ export default function DocumentTable({
               </div>
               <div className="flex items-center gap-1">
                 <Button
+                  aria-label="最初のページ"
                   variant="outline"
                   size="xs"
                   onClick={goFirst}
@@ -133,6 +134,7 @@ export default function DocumentTable({
                   {"<<"}
                 </Button>
                 <Button
+                  aria-label="前のページ"
                   variant="outline"
                   size="xs"
                   onClick={goPrev}
@@ -144,6 +146,7 @@ export default function DocumentTable({
                   {currentPage} / {pageCount || 1}
                 </span>
                 <Button
+                  aria-label="次のページ"
                   variant="outline"
                   size="xs"
                   onClick={goNext}
@@ -152,6 +155,7 @@ export default function DocumentTable({
                   {">"}
                 </Button>
                 <Button
+                  aria-label="最後のページ"
                   variant="outline"
                   size="xs"
                   onClick={goLast}
@@ -194,6 +198,7 @@ export default function DocumentTable({
             <tr>
               <th className="sticky top-0 z-10 p-2 w-10 text-center border-b border-border bg-secondary">
                 <Input
+                  aria-label="全選択"
                   id="selectAllCheckbox"
                   type="checkbox"
                   size="checkbox"
@@ -260,6 +265,7 @@ export default function DocumentTable({
                   <tr key={d.documentId + index}>
                     <td className="p-2 text-center">
                       <Input
+                        aria-label="選択"
                         id={`select-checkbox-${d.documentId + index}`}
                         type="checkbox"
                         size="checkbox"

@@ -7,11 +7,6 @@ import {
 } from "@/features/documents/config/document-constants";
 import { computeFileHash } from "@/lib/utils";
 
-interface ProcessingProgress {
-  current: number;
-  total: number;
-}
-
 // 重複情報を含むファイル情報
 export interface FileWithDuplicateInfo {
   file: File;
@@ -25,10 +20,6 @@ export function useFileSelection() {
   const [previews, setPreviews] = useState<Preview[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState<ProcessingProgress>({
-    current: 0,
-    total: 0,
-  });
 
   // 重複検出用のstate
   const [fileHashes, setFileHashes] = useState<Map<string, string>>(new Map());
@@ -227,7 +218,6 @@ export function useFileSelection() {
       }
 
       setIsProcessing(true);
-      setProgress({ current: 0, total: files.length });
       if (!shouldClear) setErrorMessage(null);
 
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -299,9 +289,6 @@ export function useFileSelection() {
 
         const newFiles: File[] = [];
 
-        // プログレスバーの更新用
-        setProgress({ current: 0, total: filesToAdd.length });
-
         for (let i = 0; i < filesToAdd.length; i++) {
           const f = filesToAdd[i];
           const uniqueFile = getUniqueFileName(f, existingNames);
@@ -310,7 +297,6 @@ export function useFileSelection() {
 
           // 処理が重い場合に備えてUI更新の隙間を作る
           if (i % 5 === 0) {
-            setProgress({ current: i + 1, total: filesToAdd.length });
             await new Promise((resolve) => setTimeout(resolve, 0));
           }
         }
@@ -319,7 +305,6 @@ export function useFileSelection() {
         setSelectedFiles(next);
 
         // 4. ハッシュ計算と重複検出
-        setProgress({ current: 0, total: next.length });
         const { newHashes, duplicates } = await detectDuplicates(
           next,
           new Map() // 全ファイルを再計算（追加ファイルのみでなく全体で検出）
@@ -332,7 +317,6 @@ export function useFileSelection() {
         await buildPreviews(next, duplicates);
       } finally {
         setIsProcessing(false);
-        setProgress({ current: 0, total: 0 });
       }
     },
     [selectedFiles, fileHashes, duplicateFiles]
@@ -389,7 +373,6 @@ export function useFileSelection() {
     errorMessage,
     setErrorMessage,
     isProcessing,
-    progress,
     addFiles,
     removeFile,
     clearFiles,

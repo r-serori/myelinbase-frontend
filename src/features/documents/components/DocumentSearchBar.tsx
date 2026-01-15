@@ -251,6 +251,7 @@ export default function DocumentSearchBar({
 
           <div className="md:ml-34 ml-auto mt-auto">
             <Button
+              aria-label="検索を実行"
               variant="outline"
               size="sm"
               onClick={actions.applyFilters}
@@ -274,6 +275,7 @@ export default function DocumentSearchBar({
                 ファイル名: {applied.filename}
               </Text>
               <Button
+                aria-label="ファイル名をクリア"
                 variant="iconSmall"
                 size="iconSmall"
                 onClick={actions.clearFilename}
@@ -289,6 +291,7 @@ export default function DocumentSearchBar({
                 タグ: 未設定
               </Text>
               <Button
+                aria-label="未設定のみをクリア"
                 variant="iconSmall"
                 size="iconSmall"
                 onClick={actions.clearUntagged}
@@ -306,6 +309,7 @@ export default function DocumentSearchBar({
                 タグ: {tag}
               </Text>
               <Button
+                aria-label="タグをクリア"
                 variant="iconSmall"
                 size="iconSmall"
                 onClick={() => actions.clearTags(tag)}
@@ -331,6 +335,7 @@ export default function DocumentSearchBar({
                 ステータス: {getDocumentDisplayLabel(filters.statusFilter)}
               </Text>
               <Button
+                aria-label="ステータスをクリア"
                 variant="iconSmall"
                 size="iconSmall"
                 onClick={actions.clearStatus}
@@ -340,6 +345,7 @@ export default function DocumentSearchBar({
             </div>
           )}
           <Button
+            aria-label="すべての条件をクリア"
             variant="link"
             size="sm"
             className="h-3 p-0 ml-2"

@@ -270,6 +270,7 @@ export default function FilePreviewList({
                     )}
                   </div>
                   <Button
+                    aria-label="プレビューファイルを削除"
                     variant="close"
                     type="button"
                     size="close"

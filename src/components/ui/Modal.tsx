@@ -115,10 +115,15 @@ export function ModalHeader({
           {title ?? ""}
         </Text>
         {tooltipContent && (
-          <Tooltip position="top-[8px] left-60">{tooltipContent}</Tooltip>
+          <Tooltip position="top-0 left-8">{tooltipContent}</Tooltip>
         )}
       </div>
-      <Button variant="close" size="close" onClick={onClose}>
+      <Button
+        variant="close"
+        size="close"
+        onClick={onClose}
+        aria-label="モーダルヘッダーの閉じるボタン"
+      >
         <X className="size-5" />
       </Button>
     </div>

@@ -330,6 +330,7 @@ function ProfileContent() {
                     <Button
                       variant="iconSmall"
                       size="icon"
+                      aria-label="ユーザー名を編集"
                       onClick={startEditingNickname}
                     >
                       <Pencil className="size-4" />

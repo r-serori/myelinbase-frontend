@@ -94,6 +94,7 @@ export default function ChatInput({
               <Button
                 variant="close"
                 size="icon"
+                aria-label="チャット入力を最大化"
                 onClick={() => onToggleExpanded(true)}
               >
                 <Maximize className="size-4" />
@@ -103,6 +104,7 @@ export default function ChatInput({
               <Button
                 variant="close"
                 size="icon"
+                aria-label="チャット入力を最小化"
                 onClick={() => onToggleExpanded(false)}
               >
                 <Minimize className="size-4" />
@@ -122,6 +124,15 @@ export default function ChatInput({
                 }
               >
                 <button
+                  aria-label={
+                    isStreamingAnswer
+                      ? "生成を停止"
+                      : input.trim().length > 0 && !isRecording
+                        ? "送信"
+                        : isRecording
+                          ? "録音を停止"
+                          : "音声入力"
+                  }
                   id="chat-send-button"
                   type="button"
                   className={cn(
