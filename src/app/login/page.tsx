@@ -52,14 +52,7 @@ export default function LoginPage() {
         await signIn({ username: email, password });
       }
     } catch (err: unknown) {
-      if (err instanceof Error && err.name === "UserNotFoundException") {
-        setGlobalError("ユーザーが見つかりません");
-      } else if (
-        err instanceof Error &&
-        err.name === "NotAuthorizedException"
-      ) {
-        setGlobalError("メールアドレスまたはパスワードが正しくありません");
-      } else if (
+      if (
         err instanceof Error &&
         err.name === "UserAlreadyAuthenticatedException"
       ) {
@@ -68,7 +61,8 @@ export default function LoginPage() {
       } else {
         showToast({
           type: "error",
-          message: "ログインに失敗しました。",
+          message:
+            "ログインに失敗しました。メールアドレスまたはパスワードが正しくありません。",
         });
       }
     } finally {

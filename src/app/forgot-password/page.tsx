@@ -52,19 +52,14 @@ export default function ForgotPasswordPage() {
       await resetPassword({ username: email });
       setStep("RESET");
     } catch (err: unknown) {
-      if (err instanceof Error && err.name === "UserNotFoundException") {
-        setGlobalError("ユーザーが見つかりません");
-      } else if (
-        err instanceof Error &&
-        err.name === "LimitExceededException"
-      ) {
+      if (err instanceof Error && err.name === "LimitExceededException") {
         setGlobalError(
           "試行回数が上限を超えました。しばらく待ってから再度お試しください"
         );
       } else {
         showToast({
           type: "error",
-          message: "リセットコードの送信に失敗しました",
+          message: "リセットコードの送信に失敗しました。再度お試しください。",
         });
       }
     } finally {

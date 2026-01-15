@@ -174,13 +174,11 @@ function ProfileContent() {
       setConfirmNewPassword("");
       setIsChangingPassword(false);
       passwordValidation.clearErrors();
-    } catch (err: unknown) {
-      handleCommonError(
-        err,
-        setPasswordGlobalError,
-        showToast,
-        "パスワードの変更に失敗しました"
-      );
+    } catch {
+      showToast({
+        type: "error",
+        message: "パスワードの変更に失敗しました。再度お試しください。",
+      });
     } finally {
       setLoading(false);
     }

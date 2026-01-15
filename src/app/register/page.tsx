@@ -78,7 +78,7 @@ export default function RegisterPage() {
       } else {
         showToast({
           type: "error",
-          message: "登録中にエラーが発生しました",
+          message: "登録中にエラーが発生しました。再度お試しください。",
         });
       }
     } finally {
@@ -112,7 +112,7 @@ export default function RegisterPage() {
       } else {
         showToast({
           type: "error",
-          message: "確認コードの検証に失敗しました",
+          message: "確認コードの検証に失敗しました。再度お試しください。",
         });
       }
     } finally {
