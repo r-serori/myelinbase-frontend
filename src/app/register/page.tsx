@@ -23,7 +23,6 @@ import { Input } from "@/components/ui/Input";
 import Spinner from "@/components/ui/Spinner";
 import { Text } from "@/components/ui/Text";
 import { useFormValidation } from "@/hooks/useFormValidation";
-import { handleCommonError } from "@/lib/error-handler";
 
 import { useToast } from "@/providers/ToastProvider";
 
@@ -77,12 +76,10 @@ export default function RegisterPage() {
       if (err instanceof Error && err.name === "UsernameExistsException") {
         setGlobalError("このメールアドレスは既に登録されています");
       } else {
-        handleCommonError(
-          err,
-          setGlobalError,
-          showToast,
-          "登録中にエラーが発生しました"
-        );
+        showToast({
+          type: "error",
+          message: "登録中にエラーが発生しました",
+        });
       }
     } finally {
       setLoading(false);
@@ -113,12 +110,10 @@ export default function RegisterPage() {
           "確認コードの有効期限が切れています。再送信してください"
         );
       } else {
-        handleCommonError(
-          err,
-          setGlobalError,
-          showToast,
-          "確認コードの検証に失敗しました"
-        );
+        showToast({
+          type: "error",
+          message: "確認コードの検証に失敗しました",
+        });
       }
     } finally {
       setLoading(false);
@@ -130,13 +125,11 @@ export default function RegisterPage() {
     try {
       await resendSignUpCode({ username: email });
       showToast({ type: "success", message: "確認コードを再送信しました" });
-    } catch (err: unknown) {
-      handleCommonError(
-        err,
-        setGlobalError,
-        showToast,
-        "コードの再送信に失敗しました"
-      );
+    } catch {
+      showToast({
+        type: "error",
+        message: "コードの再送信に失敗しました。再度お試しください。",
+      });
     }
   };
 

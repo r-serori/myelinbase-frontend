@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/Input";
 import Spinner from "@/components/ui/Spinner";
 import { Text } from "@/components/ui/Text";
 import { useFormValidation } from "@/hooks/useFormValidation";
-import { handleCommonError } from "@/lib/error-handler";
 
 import { useToast } from "@/providers/ToastProvider";
 
@@ -66,21 +65,11 @@ export default function LoginPage() {
       ) {
         await checkUser();
         router.push("/documents");
-      } else if (
-        err instanceof Error &&
-        err.name === "ResourceNotFoundException"
-      ) {
+      } else {
         showToast({
           type: "error",
           message: "ログインに失敗しました。",
         });
-      } else {
-        handleCommonError(
-          err,
-          setGlobalError,
-          showToast,
-          "ログインに失敗しました"
-        );
       }
     } finally {
       setLoading(false);

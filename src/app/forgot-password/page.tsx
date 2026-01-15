@@ -62,12 +62,10 @@ export default function ForgotPasswordPage() {
           "試行回数が上限を超えました。しばらく待ってから再度お試しください"
         );
       } else {
-        handleCommonError(
-          err,
-          setGlobalError,
-          showToast,
-          "リセットコードの送信に失敗しました"
-        );
+        showToast({
+          type: "error",
+          message: "リセットコードの送信に失敗しました",
+        });
       }
     } finally {
       setLoading(false);
