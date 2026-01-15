@@ -73,6 +73,7 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <Link href="/profile">
               <Button
+                aria-label="プロフィール"
                 variant="close"
                 size="close"
                 className={`flex items-center gap-2 px-2 hover:bg-muted/50 ${
