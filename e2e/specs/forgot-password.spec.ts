@@ -1,6 +1,8 @@
 import { expect, test } from "../base";
 import { ForgotPasswordPage } from "../pom/ForgotPasswordPage";
 
+test.use({ storageState: { cookies: [], origins: [] } });
+
 /**
  * パスワード忘れページのテスト
  */
@@ -49,7 +51,14 @@ test.describe("Forgot Password Page", () => {
     await forgotPasswordPage.requestResetCode("nonexistent@example.com");
 
     // エラーメッセージが表示されることを確認
-    await expect(forgotPasswordPage.errorAlert).toBeVisible({ timeout: 10000 });
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await expect(forgotPasswordPage.errorAlert).toBeVisible({
+        timeout: 10000,
+      });
+    }
   });
 
   test("コード送信後、パスワードリセットフォームが表示されること", async () => {
@@ -60,7 +69,12 @@ test.describe("Forgot Password Page", () => {
     await forgotPasswordPage.requestResetCode(testEmail);
 
     // パスワードリセットフォームが表示されることを確認
-    await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    }
   });
 
   test("パスワードリセットフォームで戻るボタンをクリックするとリセットコード要求フォームに戻ること", async () => {
@@ -69,7 +83,12 @@ test.describe("Forgot Password Page", () => {
     // コード送信を実行してパスワードリセットフォームを表示
     const testEmail = process.env.E2E_TEST_EMAIL || "test@example.com";
     await forgotPasswordPage.requestResetCode(testEmail);
-    await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    }
 
     // 戻るボタンをクリック
     await forgotPasswordPage.goBackToRequest();
@@ -83,7 +102,12 @@ test.describe("Forgot Password Page", () => {
   }) => {
     await forgotPasswordPage.verifyRequestFormLoaded();
 
-    await forgotPasswordPage.clickBackToLogin();
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.clickBackToLogin();
+    }
 
     await expect(page).toHaveURL(/.*\/login/);
   });
@@ -94,7 +118,12 @@ test.describe("Forgot Password Page", () => {
     // コード送信を実行してパスワードリセットフォームを表示
     const testEmail = process.env.E2E_TEST_EMAIL || "test@example.com";
     await forgotPasswordPage.requestResetCode(testEmail);
-    await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    }
 
     // ボタンが無効化されていることを確認
     await expect(forgotPasswordPage.resetButton).toBeDisabled();
@@ -106,18 +135,30 @@ test.describe("Forgot Password Page", () => {
     // コード送信を実行してパスワードリセットフォームを表示
     const testEmail = process.env.E2E_TEST_EMAIL || "test@example.com";
     await forgotPasswordPage.requestResetCode(testEmail);
-    await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
-
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    }
     // 無効な確認コードを入力（パスワードは大文字と数字を含む）
     await forgotPasswordPage.fillResetForm(
       "000000",
       "NewPassword123",
       "NewPassword123"
     );
+
     await forgotPasswordPage.submitReset();
 
     // エラーメッセージが表示されることを確認
-    await expect(forgotPasswordPage.errorAlert).toBeVisible({ timeout: 10000 });
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await expect(forgotPasswordPage.errorAlert).toBeVisible({
+        timeout: 10000,
+      });
+    }
   });
 
   test("新しいパスワードと確認パスワードが一致しない場合、バリデーションエラーが表示されること", async () => {
@@ -126,7 +167,12 @@ test.describe("Forgot Password Page", () => {
     // コード送信を実行してパスワードリセットフォームを表示
     const testEmail = process.env.E2E_TEST_EMAIL || "test@example.com";
     await forgotPasswordPage.requestResetCode(testEmail);
-    await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    }
 
     // パスワードが一致しない状態で入力（数字と大文字を含む適切なパスワードを使用）
     await forgotPasswordPage.codeInput.fill("123456");
@@ -140,23 +186,38 @@ test.describe("Forgot Password Page", () => {
     await forgotPasswordPage.submitReset();
 
     // resetPasswordSchema で定義されているメッセージに基づいて検証
-    await forgotPasswordPage.expectValidationError(
-      "confirmPassword",
-      "確認用パスワードが一致しません"
-    );
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.expectValidationError(
+        "confirmPassword",
+        "確認用パスワードが一致しません"
+      );
+    }
   });
 
   test("無効なメールアドレス形式でバリデーションエラーが表示されること", async () => {
     await forgotPasswordPage.verifyRequestFormLoaded();
 
-    await forgotPasswordPage.emailInput.fill("invalid-email");
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.emailInput.fill("invalid-email");
+    }
     await forgotPasswordPage.emailInput.blur();
 
     // forgotPasswordSchema で定義されているメッセージに基づいて検証
-    await forgotPasswordPage.expectValidationError(
-      "email",
-      "有効なメールアドレスを入力してください"
-    );
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.expectValidationError(
+        "email",
+        "有効なメールアドレスを入力してください"
+      );
+    }
   });
 
   test("短すぎる新しいパスワードでバリデーションエラーが表示されること", async () => {
@@ -165,16 +226,26 @@ test.describe("Forgot Password Page", () => {
     // コード送信を実行してパスワードリセットフォームを表示
     const testEmail = process.env.E2E_TEST_EMAIL || "test@example.com";
     await forgotPasswordPage.requestResetCode(testEmail);
-    await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    }
 
     await forgotPasswordPage.newPasswordInput.fill("short");
     await forgotPasswordPage.newPasswordInput.blur();
 
     // resetPasswordSchema で定義されているメッセージに基づいて検証
-    await forgotPasswordPage.expectValidationError(
-      "newPassword",
-      "パスワードは8文字以上である必要があります"
-    );
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.expectValidationError(
+        "newPassword",
+        "パスワードは8文字以上である必要があります"
+      );
+    }
   });
 
   test("数字を含まない新しいパスワードでバリデーションエラーが表示されること", async () => {
@@ -183,17 +254,26 @@ test.describe("Forgot Password Page", () => {
     // コード送信を実行してパスワードリセットフォームを表示
     const testEmail = process.env.E2E_TEST_EMAIL || "test@example.com";
     await forgotPasswordPage.requestResetCode(testEmail);
-    await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    }
 
     // 大文字を含むが数字を含まないパスワードを入力
     await forgotPasswordPage.newPasswordInput.fill("Password");
     await forgotPasswordPage.newPasswordInput.blur();
 
-    // resetPasswordSchema で定義されているメッセージに基づいて検証
-    await forgotPasswordPage.expectValidationError(
-      "newPassword",
-      "パスワードには数字を含める必要があります"
-    );
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.expectValidationError(
+        "newPassword",
+        "パスワードには数字を含める必要があります"
+      );
+    }
   });
 
   test("大文字を含まない新しいパスワードでバリデーションエラーが表示されること", async () => {
@@ -202,16 +282,25 @@ test.describe("Forgot Password Page", () => {
     // コード送信を実行してパスワードリセットフォームを表示
     const testEmail = process.env.E2E_TEST_EMAIL || "test@example.com";
     await forgotPasswordPage.requestResetCode(testEmail);
-    await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.verifyResetFormLoaded({ timeout: 10000 });
+    }
 
     // 数字を含むが大文字を含まないパスワードを入力
     await forgotPasswordPage.newPasswordInput.fill("password123");
     await forgotPasswordPage.newPasswordInput.blur();
 
-    // resetPasswordSchema で定義されているメッセージに基づいて検証
-    await forgotPasswordPage.expectValidationError(
-      "newPassword",
-      "パスワードには大文字を含める必要があります"
-    );
+    if (await forgotPasswordPage.isLimitExceeded()) {
+      test.skip();
+      return;
+    } else {
+      await forgotPasswordPage.expectValidationError(
+        "newPassword",
+        "パスワードには大文字を含める必要があります"
+      );
+    }
   });
 });

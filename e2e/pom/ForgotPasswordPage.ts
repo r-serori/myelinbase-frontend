@@ -161,4 +161,8 @@ export class ForgotPasswordPage {
     await expect(errorMessage).toBeVisible();
     await expect(errorMessage).toContainText(message);
   }
+
+  async isLimitExceeded() {
+    return await this.page.getByText(/試行回数が上限/).isVisible();
+  }
 }
