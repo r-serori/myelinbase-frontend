@@ -8,7 +8,7 @@ import {
   resendSignUpCode,
   signIn,
   signUp,
-} from "aws-amplify/auth";
+} from "@aws-amplify/auth";
 
 import AuthLayout from "@/features/auth/components/AuthLayout";
 import { useAuth } from "@/features/auth/providers/AuthProvider";

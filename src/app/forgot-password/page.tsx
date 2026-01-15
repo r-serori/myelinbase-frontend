@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { confirmResetPassword, resetPassword } from "aws-amplify/auth";
+import { confirmResetPassword, resetPassword } from "@aws-amplify/auth";
 
 import AuthLayout from "@/features/auth/components/AuthLayout";
 import {
