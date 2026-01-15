@@ -30,7 +30,6 @@ export default function FeedbackModal({
 }: FeedbackModalProps) {
   return (
     <Modal
-      aria-label="フィードバックモーダル"
       isOpen={isOpen}
       onClose={onClose}
       size="lg"

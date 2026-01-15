@@ -284,7 +284,6 @@ export default function SessionList({
                     </div>
                     {isEditing && (
                       <Modal
-                        aria-label="チャット名変更モーダル"
                         isOpen={isEditing}
                         title="チャット名を変更"
                         onClose={handleEditModalClose}
@@ -357,7 +356,6 @@ export default function SessionList({
       )}
 
       <Modal
-        aria-label="チャット削除モーダル"
         isOpen={deleteModalOpen}
         title="チャットを削除"
         onClose={handleDeleteModalClose}

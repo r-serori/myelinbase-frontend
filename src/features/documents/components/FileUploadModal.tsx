@@ -33,7 +33,6 @@ export default function FileUploadModal({
   );
   return (
     <Modal
-      aria-label="ファイルアップロードモーダル"
       isOpen={showUploadModal}
       title="ファイルアップロード"
       tooltipContent={tooltipContent}

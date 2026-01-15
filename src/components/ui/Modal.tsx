@@ -58,6 +58,7 @@ export function Modal({
   return createPortal(
     <div
       role="dialog"
+      aria-label={title}
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200"
     >
