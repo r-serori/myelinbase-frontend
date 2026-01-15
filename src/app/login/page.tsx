@@ -8,12 +8,10 @@ import { signIn } from "@aws-amplify/auth";
 import AuthLayout from "@/features/auth/components/AuthLayout";
 import { useAuth } from "@/features/auth/providers/AuthProvider";
 import { loginSchema } from "@/features/auth/types/index";
-import Alert from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
 import Spinner from "@/components/ui/Spinner";
-import { Text } from "@/components/ui/Text";
 import { useFormValidation } from "@/hooks/useFormValidation";
 
 import { useToast } from "@/providers/ToastProvider";
@@ -23,7 +21,6 @@ export default function LoginPage() {
   const { user, isLoading, checkUser } = useAuth();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [globalError, setGlobalError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading && user && process.env.NEXT_PUBLIC_LOGIN_SKIP !== "true") {
@@ -38,7 +35,6 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setGlobalError(null);
 
     if (!validateAll({ email, password })) {
       return;
@@ -121,14 +117,6 @@ export default function LoginPage() {
             disabled={loading}
           />
         </FormField>
-
-        {globalError && (
-          <Alert color="destructive">
-            <Text variant="sm" color="destructive">
-              {globalError}
-            </Text>
-          </Alert>
-        )}
 
         <Button
           type="submit"
