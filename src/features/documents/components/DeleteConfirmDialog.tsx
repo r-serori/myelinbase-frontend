@@ -41,7 +41,13 @@ export default function DeleteConfirmDialog({
   const isMatch = inputValue === confirmText;
 
   return (
-    <Modal isOpen={isOpen} title="削除の確認" size="lg" onClose={onClose}>
+    <Modal
+      aria-label="削除確認モーダル"
+      isOpen={isOpen}
+      title="削除の確認"
+      size="lg"
+      onClose={onClose}
+    >
       <div className="space-y-4">
         <Text variant="md" leading="relaxed">
           {isMultiple ? (

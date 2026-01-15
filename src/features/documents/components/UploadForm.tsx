@@ -560,6 +560,7 @@ export default function UploadForm({
 
       {previewingFile && (
         <Modal
+          aria-label="ファイルプレビューモーダル"
           size="3xl"
           isOpen={!!previewingFile}
           title={previewingFile.name}

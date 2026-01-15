@@ -216,6 +216,7 @@ function ProfileContent() {
         </div>
 
         <Modal
+          aria-label="ログアウトモーダル"
           title="ログアウトしますか？"
           isOpen={isLogoutModalOpen}
           onClose={() => setIsLogoutModalOpen(false)}
