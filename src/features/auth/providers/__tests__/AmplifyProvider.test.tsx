@@ -1,11 +1,11 @@
+import { Amplify } from "@aws-amplify/core";
 import { render, screen } from "@testing-library/react";
-import { Amplify } from "aws-amplify";
 import { describe, expect, it, vi } from "vitest";
 
 import AmplifyProvider from "../AmplifyProvider";
 
 // aws-amplifyのモック
-vi.mock("aws-amplify", () => ({
+vi.mock("@aws-amplify/core", () => ({
   Amplify: {
     configure: vi.fn(),
   },

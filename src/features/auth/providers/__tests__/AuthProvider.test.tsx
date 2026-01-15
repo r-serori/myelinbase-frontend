@@ -1,11 +1,11 @@
+import * as AmplifyAuth from "@aws-amplify/auth";
 import { act, render, screen, waitFor } from "@testing-library/react";
-import * as AmplifyAuth from "aws-amplify/auth";
 import { beforeEach, describe, expect, it, MockedFunction, vi } from "vitest";
 
 import { AuthProvider, useAuth } from "../AuthProvider";
 
 // Mock aws-amplify/auth
-vi.mock("aws-amplify/auth", () => ({
+vi.mock("@aws-amplify/auth", () => ({
   getCurrentUser: vi.fn(),
   fetchUserAttributes: vi.fn(),
   signOut: vi.fn(),
