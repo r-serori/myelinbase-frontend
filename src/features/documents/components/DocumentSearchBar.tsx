@@ -71,7 +71,7 @@ export default function DocumentSearchBar({
               size="sm"
               value={filters.filenameInput}
               onChange={(e) => actions.setFilenameInput(e.target.value)}
-              placeholder="例: 規定, rules"
+              placeholder="例: 就業規則.pdf"
             />
           </div>
 
