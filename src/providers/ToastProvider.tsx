@@ -116,7 +116,7 @@ const ToastItem = ({
       className={`pointer-events-auto flex w-full max-w-2xl items-center gap-3 rounded-lg border p-2 shadow-lg transition-all duration-300 animate-in slide-in-from-top-2 fade-in ${
         colors[toast.type]
       }`}
-      role="status"
+      role="alertdialog"
       aria-live="polite"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

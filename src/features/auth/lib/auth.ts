@@ -1,5 +1,5 @@
 "use client";
-import { fetchAuthSession } from "aws-amplify/auth";
+import { fetchAuthSession } from "@aws-amplify/auth";
 
 export async function getJwt(): Promise<string> {
   const { tokens } = await fetchAuthSession();

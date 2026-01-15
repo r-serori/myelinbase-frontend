@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "aws-amplify/auth";
+import { signIn } from "@aws-amplify/auth";
 
 import AuthLayout from "@/features/auth/components/AuthLayout";
 import { useAuth } from "@/features/auth/providers/AuthProvider";

@@ -1,8 +1,12 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
-import { Hub } from "aws-amplify/utils";
+import {
+  fetchUserAttributes,
+  getCurrentUser,
+  signOut,
+} from "@aws-amplify/auth";
+import { Hub } from "@aws-amplify/core";
 
 import { useToast } from "@/providers/ToastProvider";
 

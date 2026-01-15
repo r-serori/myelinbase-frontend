@@ -41,6 +41,7 @@ function Alert({
         colors[color],
         className
       )}
+      role="alert"
     >
       {color === "destructive" && (
         <AlertCircle className="size-4 shrink-0 text-destructive" />
