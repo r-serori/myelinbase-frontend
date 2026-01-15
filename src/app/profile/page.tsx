@@ -5,7 +5,7 @@ import {
   fetchUserAttributes,
   updatePassword,
   updateUserAttributes,
-} from "aws-amplify/auth";
+} from "@aws-amplify/auth";
 import {
   ChevronDown,
   ChevronUp,
