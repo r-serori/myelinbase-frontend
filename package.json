@@ -8,7 +8,8 @@
     "start": "next start -p 3001",
     "orval": "orval",
     "lint": "eslint",
-    "test": "vitest"
+    "test": "vitest",
+    "test:e2e": "npx playwright test --ui"
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.3",
