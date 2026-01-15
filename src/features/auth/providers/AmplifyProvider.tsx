@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Amplify } from "aws-amplify";
+import { Amplify } from "@aws-amplify/core";
 
 Amplify.configure(
   {
