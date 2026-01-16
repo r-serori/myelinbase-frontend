@@ -1,0 +1,65 @@
+{
+  "cookies": [
+    {
+      "name": "CognitoIdentityServiceProvider.13qm2ikiivn7mf9mbkcpuguuno.LastAuthUser",
+      "value": "2744ea88-1001-7097-2ab0-7c868f17d447",
+      "domain": "myelinbase-frontend-git-feature-base-r-seroris-projects.vercel.app",
+      "path": "/",
+      "expires": 1800025880,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "CognitoIdentityServiceProvider.13qm2ikiivn7mf9mbkcpuguuno.2744ea88-1001-7097-2ab0-7c868f17d447.accessToken",
+      "value": "eyJraWQiOiJGdEhZcHZzUm1EbXRhUVlSaGN4d1FxZmZCRjYxK29LaW5yNjdnVDJPWEVNPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIyNzQ0ZWE4OC0xMDAxLTcwOTctMmFiMC03Yzg2OGYxN2Q0NDciLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuYXAtbm9ydGhlYXN0LTEuYW1hem9uYXdzLmNvbVwvYXAtbm9ydGhlYXN0LTFfZktnRkp4YUJJIiwiY2xpZW50X2lkIjoiMTNxbTJpa2lpdm43bWY5bWJrY3B1Z3V1bm8iLCJvcmlnaW5fanRpIjoiNGE0ODZhZWItNDVkNi00YWZiLWI3NTItNTY4MTllMTkzN2Y0IiwiZXZlbnRfaWQiOiI1MTJkODk2NC05ZjdjLTQ2N2EtOWZmYi03MTQ0YmQ1YzEyN2YiLCJ0b2tlbl91c2UiOiJhY2Nlc3MiLCJzY29wZSI6ImF3cy5jb2duaXRvLnNpZ25pbi51c2VyLmFkbWluIiwiYXV0aF90aW1lIjoxNzY4NDg5ODgwLCJleHAiOjE3Njg0OTM0ODAsImlhdCI6MTc2ODQ4OTg4MCwianRpIjoiZmNlZjQ4NWUtZDY2Mi00YzgxLWFiOTAtNjEwNzA2ZTAyYWFhIiwidXNlcm5hbWUiOiIyNzQ0ZWE4OC0xMDAxLTcwOTctMmFiMC03Yzg2OGYxN2Q0NDcifQ.S_pCD2zh18twHfKQAHOhRXxvrG9v5IlKexjHpDdLh0ebd2jtLiUnLeuTcHIQMbVg0h2BLJ4eVIOqtUQ3GeKCPOR6FYnVur5TvwPOdSM61kjj1jpezXKOxXzngjHva1WkpVMGhGcbuRlqHZpQwEE04H4tytYwPV0PT6e2MBfjiYwuBr4Dzs2-r6j8rkNzYcnh8S4oWpuOs6OEHhURqpWYJFGO0P48vzxHukrTRanzh4ktYCbiHujXp2ERqf0_ABkh02m-TnWZucuU6HmP0h9li7NPFowjK4BrGk4Q2Tyaa7wxWtctszLH1I1APzNnTuGBaZhDu1vEcoNTna1JesYQEQ",
+      "domain": "myelinbase-frontend-git-feature-base-r-seroris-projects.vercel.app",
+      "path": "/",
+      "expires": 1800025881,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "CognitoIdentityServiceProvider.13qm2ikiivn7mf9mbkcpuguuno.2744ea88-1001-7097-2ab0-7c868f17d447.idToken",
+      "value": "eyJraWQiOiI3TjFyWU9rVUoreVBQTFdQYWNBVEtwZFFxeGtha3dpUzgycEhMRmFNd2cwPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIyNzQ0ZWE4OC0xMDAxLTcwOTctMmFiMC03Yzg2OGYxN2Q0NDciLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmFwLW5vcnRoZWFzdC0xLmFtYXpvbmF3cy5jb21cL2FwLW5vcnRoZWFzdC0xX2ZLZ0ZKeGFCSSIsImNvZ25pdG86dXNlcm5hbWUiOiIyNzQ0ZWE4OC0xMDAxLTcwOTctMmFiMC03Yzg2OGYxN2Q0NDciLCJvcmlnaW5fanRpIjoiNGE0ODZhZWItNDVkNi00YWZiLWI3NTItNTY4MTllMTkzN2Y0IiwiYXVkIjoiMTNxbTJpa2lpdm43bWY5bWJrY3B1Z3V1bm8iLCJldmVudF9pZCI6IjUxMmQ4OTY0LTlmN2MtNDY3YS05ZmZiLTcxNDRiZDVjMTI3ZiIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNzY4NDg5ODgwLCJuaWNrbmFtZSI6IlJ5dW5vc3VrZSBTYWthdWUiLCJleHAiOjE3Njg0OTM0ODAsImlhdCI6MTc2ODQ4OTg4MCwianRpIjoiZTE4OGM1MjQtZDZjYy00ZmJkLTlkMTUtNzU0NGYyNTE4OTdkIiwiZW1haWwiOiJyeXVub3N1a2Uuc2FrYXVlQGdtYWlsLmNvbSJ9.c6jL304mFiKxXvHcRWolj35n2XqJ7ga65Q976mgF1PomXamij4x_EdNN1SHrt7zXYpFnBuF7tGKWOesrF_n-qpg7fNe5FCQB6maqlzqIuhnydgB1Dd7zow1vFiJ2FXR6P7vsO5kwjfbs0UA6U7TtF5RT2FdrmnvUyuaAHhMfKXj4weOKhTIw6wtvS2dirLYyuh9LUi6rMDd_w04voSadQmfYLtZXDdWIWwiRKswKpwlHN4iHyvdKnzHz_i1fZ41EgT25mQm_8Xh0rI6c9Hdn4ZZ2lXuePxA5Jt20SvepQOxhGRncIFfqoHRoheMw8ncWRr3yQ4BvQJDFOJHBjARB-g",
+      "domain": "myelinbase-frontend-git-feature-base-r-seroris-projects.vercel.app",
+      "path": "/",
+      "expires": 1800025881,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "CognitoIdentityServiceProvider.13qm2ikiivn7mf9mbkcpuguuno.2744ea88-1001-7097-2ab0-7c868f17d447.refreshToken",
+      "value": "eyJjdHkiOiJKV1QiLCJlbmMiOiJBMjU2R0NNIiwiYWxnIjoiUlNBLU9BRVAifQ.RFJyBx5tHDMcEh8SF9TAEdMNChCJvsB7IZpsfH7dH0xOZUdoeW4nySBlBeCKku6Jv0gPSTObBfTEEWVeCohD8-hKQbbdUMVuDvJvIYSmHDKaTuehHAZu_5yCxhiirNI9FuVJNUcyjdCBrxeCOa3QNpDwjFirlJmdYrPbpy3dhDL_V1BrQDicQbbxmIGjjpGqJIklT1fQnKui2_bo6ApitBcpmn8ZbdeD-UAcAPE9tvCfU8elqhkTdpxrjwsZhdZGV4cWKXKGfgyABQ19mOj6eEH0Kanw5qWaumGBMKmC5lL0O8F0lNVsRech_fykm6rtUERpfSBIDcxoJNciZDq9hA.o3dsu4S0Avl0r5b8.AWl3QUMhMtvB8nKaz-xfgJkrpLR_pMjgKSEWT4L7Xp4Dh9kDQBhn1JQwvm3egEyt0ZwK-WfC97rIK4ZGsYU5i_1z2ioiOI6gqNtqKswxnILJ_5WKFR5St15NnfA-vVb4TOqX3_PiUn0wpSGybC9ItTOXkMrOE_Nk8pLOjPJfd1P_niNn0HvnC8gy2nToSyuT9hPIzChHQsmIQCHCNur7ra00Dx-Y-TxOheXT1_dDRhZgkiHZPuakgwo2UPB_fs5Ear7vB00uW-Da1A-nH8zBfXvx94qY88rwOojUpaDj47WRTRKIq1wW4benJovsoXggzgodtIFll3cHK5Iwu6j-Lv7oNSNwE7ptTZyaHrWyDW3HgC8LMHAyOeMulzsBSR5bW8SQKfBRTXQ4EAReM2xIk7cwrcsCZXjzdrTmUwDp_ZOUalM6gZpx7Dp35irNb1XWVmw9j0Q5kUUBEODC4H9k_xEMfpoVkRCDOW99510FOSdNbK4e9VQF5UN5mZtChXLrnMSg5anL0evYaRp8KMullAxv7rPGqnBZPeRTJP2Pbz7dDr1HzlIu1Ype9J50mxi4pWjzg18cCciZw5IVX1PvPX5wVEdV1uU-oTxBou17aSsovd-CYuhqLWQ6h0aJ1mZegro8P-QNEImI8jpiKAxPikgxn-yFXjv9LjRauGZMZeJmmiyXnvVKfnjxzh4sSG58dc-55LkHJ9FBIrWEuF4B97BP21m7Gutxq8N1r8UENOjCRmjVLz_-AoECai1zhFUvQyL765GhHooZGKQaD2nSK2JlNQWYuwQKIBTztH5Uw1GvRfKXJ__unTKn5oFBiHLixET7xMpFeE82GvFMsC2jYuoTHsrJoD_fyIin6xkhRJ5uAtooJIKZHH7JU9F8rVDZyfX9Wa8fPgoUHjJTGGTgxIkHcCIi4kX13DczQ12RmApi4xjT7stJstIO89jSLN54jQv5mpDbLlZJxmmdeD2LShEF3ODIGI-5ILoPSsQMb0a56bS-yzyG_Bh_gJy4RM-bHKuOkue3F5DFamXr4aRmWZomHiO4xnCFIBiB5rqmtDP8JgfG58hvR7si1Jls5Oq4MkifGdrTJI6MW2iTKLie_k2hrz4ZQoUfO-BuX3VSj8uZPU7lKsJ5LBq7pXudwSTah3rrD-keSn6RPuxjyiJIZnqNxeRCdPZf4oE0odAWYVnrTyjeszasNRcgoU_PfGx5LJextBMBw0B6KTiEbjzrFD6OXMYV0TRhPF7SLcOpf5ORXPqU6R817u_gYEQmMXYpVJ5GYZFauyAeN_FBFsvIJRPJhpXnLiE5aMfeNez-FuBJPfeu1Ockpksph8Jvca68jwkQ92IgSOI1.nQMHeT98v1XhiadcvfJfiQ",
+      "domain": "myelinbase-frontend-git-feature-base-r-seroris-projects.vercel.app",
+      "path": "/",
+      "expires": 1800025881,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "CognitoIdentityServiceProvider.13qm2ikiivn7mf9mbkcpuguuno.2744ea88-1001-7097-2ab0-7c868f17d447.signInDetails",
+      "value": "{%22loginId%22:%22ryunosuke.sakaue@gmail.com%22%2C%22authFlowType%22:%22USER_SRP_AUTH%22}",
+      "domain": "myelinbase-frontend-git-feature-base-r-seroris-projects.vercel.app",
+      "path": "/",
+      "expires": 1800025881,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "CognitoIdentityServiceProvider.13qm2ikiivn7mf9mbkcpuguuno.2744ea88-1001-7097-2ab0-7c868f17d447.clockDrift",
+      "value": "-998",
+      "domain": "myelinbase-frontend-git-feature-base-r-seroris-projects.vercel.app",
+      "path": "/",
+      "expires": 1800025881,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

@@ -1,0 +1,247 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { ErrorCode } from "@/lib/api/generated/model";
+
+import { ApiError, apiFetch, isApiError } from "../apiClient";
+
+// Mock getJwt
+vi.mock("@/features/auth/lib/auth", () => ({
+  getJwt: vi.fn().mockResolvedValue("mock-token"),
+}));
+
+// Mock env
+vi.mock("../env", () => ({
+  env: {
+    NEXT_PUBLIC_API_BASE_URL: "http://localhost:3000",
+  },
+}));
+
+describe("apiClient", () => {
+  const mockFetch = vi.fn<typeof fetch>();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    global.fetch = mockFetch as typeof fetch;
+  });
+
+  describe("isApiError", () => {
+    it("returns true for ApiError instance", () => {
+      const error = new ApiError("Test error", ErrorCode.VALIDATION_FAILED);
+      expect(isApiError(error)).toBe(true);
+    });
+
+    it("returns false for standard Error", () => {
+      const error = new Error("Test error");
+      expect(isApiError(error)).toBe(false);
+    });
+
+    it("returns false for non-error object", () => {
+      expect(isApiError({ message: "test" })).toBe(false);
+      expect(isApiError(null)).toBe(false);
+      expect(isApiError(undefined)).toBe(false);
+      expect(isApiError("string")).toBe(false);
+    });
+  });
+
+  describe("apiFetch", () => {
+    it("successfully fetches JSON data", async () => {
+      const mockData = { id: "1", name: "Test" };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockData,
+      } as Response);
+
+      const result = await apiFetch<typeof mockData>("/test");
+      expect(result).toEqual(mockData);
+      expect(global.fetch).toHaveBeenCalledWith(
+        "http://localhost:3000/test",
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            Authorization: "Bearer mock-token",
+          }),
+        })
+      );
+    });
+
+    it("handles 204 No Content response", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+      } as Response);
+
+      const result = await apiFetch("/test");
+      expect(result).toEqual({});
+    });
+
+    it("handles text response when JSON parsing fails", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => {
+          throw new Error("Not JSON");
+        },
+        text: async () => "plain text response",
+      } as unknown as Response);
+
+      const result = await apiFetch<string>("/test");
+      expect(result).toBe("plain text response");
+    });
+
+    it("handles empty text response", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => {
+          throw new Error("Not JSON");
+        },
+        text: async () => "",
+      } as unknown as Response);
+
+      const result = await apiFetch("/test");
+      expect(result).toEqual({});
+    });
+
+    it("throws ApiError for non-ok response with errorCode", async () => {
+      const errorResponse = {
+        errorCode: ErrorCode.VALIDATION_FAILED,
+        message: "Validation failed",
+      };
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => errorResponse,
+      } as Response);
+
+      try {
+        await apiFetch("/test");
+        expect.fail("Should have thrown ApiError");
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        expect(isApiError(error)).toBe(true);
+        if (isApiError(error)) {
+          expect(error.message).toBe("Validation failed");
+          expect(error.errorCode).toBe(ErrorCode.VALIDATION_FAILED);
+        }
+      }
+    });
+
+    it("throws ApiError for non-ok response without errorCode", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => {
+          throw new Error("Not JSON");
+        },
+        text: async () => "Server Error",
+      } as unknown as Response);
+
+      try {
+        await apiFetch("/test");
+        expect.fail("Should have thrown ApiError");
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        expect(isApiError(error)).toBe(true);
+        if (isApiError(error)) {
+          expect(error.message).toBe("Server Error");
+        }
+      }
+    });
+
+    it("throws ApiError for non-ok response with status code only", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => {
+          throw new Error("Not JSON");
+        },
+        text: async () => {
+          throw new Error("No text");
+        },
+      } as unknown as Response);
+
+      try {
+        await apiFetch("/test");
+        expect.fail("Should have thrown ApiError");
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        expect(isApiError(error)).toBe(true);
+        if (isApiError(error)) {
+          expect(error.message).toContain("404");
+        }
+      }
+    });
+
+    it("skips auth when skipAuth is true", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({}),
+      } as Response);
+
+      await apiFetch("/test", { skipAuth: true });
+      expect(global.fetch).toHaveBeenCalledWith(
+        "http://localhost:3000/test",
+        expect.objectContaining({
+          headers: expect.not.objectContaining({
+            Authorization: expect.anything(),
+          }),
+        })
+      );
+    });
+
+    it("removes Content-Type header when body is FormData", async () => {
+      const formData = new FormData();
+      formData.append("file", new Blob(["content"]));
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({}),
+      } as Response);
+
+      await apiFetch("/test", { body: formData });
+      const callArgs = mockFetch.mock.calls[0]?.[1];
+      expect(callArgs?.headers).not.toHaveProperty("Content-Type");
+    });
+
+    it("handles absolute URL path", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({}),
+      } as Response);
+
+      await apiFetch("https://example.com/api/test");
+      expect(global.fetch).toHaveBeenCalledWith(
+        "https://example.com/api/test",
+        expect.any(Object)
+      );
+    });
+
+    it("handles network errors", async () => {
+      mockFetch.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+
+      try {
+        await apiFetch("/test");
+        expect.fail("Should have thrown ApiError");
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        expect(isApiError(error)).toBe(true);
+        if (isApiError(error)) {
+          expect(error.message).toContain("ネットワークエラー");
+          expect(error.errorCode).toBe(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+      }
+    });
+
+    it("re-throws non-network errors", async () => {
+      const customError = new Error("Custom error");
+      mockFetch.mockRejectedValueOnce(customError);
+
+      await expect(apiFetch("/test")).rejects.toThrow("Custom error");
+      await expect(apiFetch("/test")).rejects.not.toThrow(ApiError);
+    });
+  });
+});
