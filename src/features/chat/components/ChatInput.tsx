@@ -1,7 +1,8 @@
 "use client";
 
 import { RefObject } from "react";
-import router from "next/router";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Maximize, Mic, Minimize, SendHorizonal, Square } from "lucide-react";
 
 import ChatTooltip from "@/features/chat/components/ChatTooltip";
@@ -38,6 +39,7 @@ export default function ChatInput({
   formRef,
   inputRef,
 }: ChatInputProps) {
+  const router = useRouter();
   const inputLines = input.split("\n").length;
 
   return (
@@ -160,14 +162,12 @@ export default function ChatInput({
         <Text variant="sm" color="muted" className="mt-3 select-none max-w-3xl">
           Myelin Baseのチャットはモデルのトレーニングには使用されません。 Myelin
           Baseは不正確な情報を表示することがあるため、回答を再確認してください。
-          <Button
-            variant="link"
-            size="link"
-            onClick={() => router.push("/privacy")}
-            className="text-xs"
+          <Link
+            href="/privacy"
+            className="text-xs text-primary hover:underline text-center pt-1 inline-block"
           >
             プライバシーについて
-          </Button>
+          </Link>
         </Text>
       </div>
     </form>

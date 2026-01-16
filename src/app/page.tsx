@@ -10,12 +10,11 @@ import { cn } from "@/lib/utils";
 
 import { Button } from "../components/ui/Button";
 import { Text } from "../components/ui/Text";
-// 型定義だけは通常通りインポートしてOK
 import type { IntroPhase } from "../components/ui/ThreeTitleLogo";
 import ThreeTitleLogo from "../components/ui/ThreeTitleLogo";
 
 const titleFont = Orbitron({
-  weight: ["600", "700"], // 太字を使用
+  weight: ["600", "700"],
   subsets: ["latin"],
   display: "swap",
 });

@@ -1,6 +1,114 @@
-# Frontend - Myelin Base
+# Myelin Base - Frontend
 
-Next.jsベースのフロントエンドアプリケーションです。認証、チャット、ドキュメント管理機能を提供します。
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind%20CSS-4-38B2AC?logo=tailwindcss" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License" />
+</p>
+
+## 🌐 Live Demo
+
+| 環境 | URL |
+|------|-----|
+| **アプリケーション** | [https://myelinbase.com](https://myelinbase.com) |
+| **API エンドポイント** | `https://api.myelinbase.com` |
+
+> 📦 **関連リポジトリ**: [myelinbase-backend](https://github.com/r-serori/myelinbase-backend) - AWS Serverless バックエンド
+
+---
+
+ドキュメントをアップロードしてAIとチャットできる、RAG（Retrieval-Augmented Generation）プラットフォームのフロントエンドです。
+
+## ✨ 主な機能
+
+- 📄 **ドキュメント管理** - ドラッグ&ドロップでアップロード、タグ管理、一覧表示
+- 💬 **AIチャット** - リアルタイムストリーミングによる滑らかな応答体験
+- 🔐 **認証** - AWS Cognito連携による安全なログイン/サインアップ
+- 📱 **レスポンシブ** - PC/タブレット/モバイル対応
+
+## 🏗️ アーキテクチャ
+
+```mermaid
+flowchart TB
+    subgraph Client["🖥️ Browser"]
+        App["Next.js App<br/>React 19"]
+    end
+
+    subgraph Vercel["☁️ Vercel"]
+        Edge["Edge Network"]
+        SSR["Server Components"]
+    end
+
+    subgraph State["📦 State Management"]
+        TanStack["TanStack Query<br/>Server State"]
+        Zustand["Zustand<br/>Client State"]
+    end
+
+    subgraph API["🔌 API Layer"]
+        Orval["Orval Generated<br/>API Client"]
+        AISDK["Vercel AI SDK<br/>Streaming"]
+    end
+
+    subgraph Backend["☁️ AWS Backend"]
+        APIGW["API Gateway<br/>REST API"]
+        ChatURL["Lambda Function URL<br/>Streaming"]
+    end
+
+    subgraph Auth["🔐 Authentication"]
+        Amplify["AWS Amplify"]
+        Cognito["Amazon Cognito"]
+    end
+
+    App --> Edge
+    Edge --> SSR
+    
+    App --> TanStack
+    App --> Zustand
+    
+    TanStack --> Orval
+    App --> AISDK
+    
+    Orval --> APIGW
+    AISDK --> ChatURL
+    
+    App --> Amplify
+    Amplify --> Cognito
+
+    style Client fill:#e1f5fe
+    style Vercel fill:#000000,color:#ffffff
+    style State fill:#fff3e0
+    style API fill:#e8f5e9
+    style Backend fill:#fff3e0
+    style Auth fill:#fce4ec
+```
+
+### 📁 プロジェクト構造
+
+```
+frontend/
+├── src/
+│   ├── app/                    # Next.js App Router
+│   │   ├── chat/              # チャットページ
+│   │   ├── documents/         # ドキュメント管理
+│   │   ├── login/             # ログイン
+│   │   └── register/          # 新規登録
+│   ├── features/              # 機能別モジュール (Feature-based)
+│   │   ├── auth/              # 認証機能
+│   │   ├── chat/              # チャット機能
+│   │   └── documents/         # ドキュメント管理
+│   ├── components/ui/         # 共通UIコンポーネント
+│   ├── hooks/                 # 汎用カスタムフック
+│   ├── lib/api/generated/     # Orval生成APIクライアント
+│   └── providers/             # Context Providers
+├── e2e/                       # Playwright E2Eテスト
+│   ├── specs/                 # テストスペック
+│   └── pom/                   # Page Object Model
+└── public/                    # 静的ファイル
+```
+
+---
 
 ## 📋 目次
 
@@ -9,22 +117,24 @@ Next.jsベースのフロントエンドアプリケーションです。認証�
 - [セットアップ](#-セットアップ)
 - [開発](#-開発)
 - [ビルド・デプロイ](#-ビルドデプロイ)
-- [プロジェクト構造](#-プロジェクト構造)
 - [テスト](#-テスト)
 - [APIコード生成](#-apiコード生成)
 - [コントリビューション](#-コントリビューション)
 
 ## 🛠 技術スタック
 
-- **フレームワーク**: [Next.js](https://nextjs.org/) 16 (App Router)
-- **言語**: [TypeScript](https://www.typescriptlang.org/)
-- **UIライブラリ**: [React](https://react.dev/) 19
-- **スタイリング**: [Tailwind CSS](https://tailwindcss.com/) 4
-- **状態管理**: [TanStack Query](https://tanstack.com/query) (React Query)
-- **認証**: [AWS Amplify](https://aws.amazon.com/amplify/)
-- **APIコード生成**: [Orval](https://orval.dev/)
-- **テスト**: [Vitest](https://vitest.dev/), [Playwright](https://playwright.dev/)
-- **モック**: [MSW](https://mswjs.io/) (Mock Service Worker)
+| カテゴリ | 技術 |
+|----------|------|
+| **フレームワーク** | [Next.js](https://nextjs.org/) 16 (App Router) |
+| **言語** | [TypeScript](https://www.typescriptlang.org/) 5.x |
+| **UIライブラリ** | [React](https://react.dev/) 19 |
+| **スタイリング** | [Tailwind CSS](https://tailwindcss.com/) 4 |
+| **状態管理** | [TanStack Query](https://tanstack.com/query) (Server State) |
+| **認証** | [AWS Amplify](https://aws.amazon.com/amplify/) |
+| **AI統合** | [Vercel AI SDK](https://sdk.vercel.ai/) 3.x |
+| **APIクライアント** | [Orval](https://orval.dev/) (自動生成) |
+| **テスト** | [Vitest](https://vitest.dev/), [Playwright](https://playwright.dev/) |
+| **モック** | [MSW](https://mswjs.io/) (Mock Service Worker) |
 
 ## 📦 前提条件
 
@@ -44,30 +154,23 @@ npm install
 
 `.env.local` ファイルを作成し、必要な環境変数を設定してください。
 
-`.env.local.example` ファイルを参考にしてください。
-
 ```bash
 # .env.local の例
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
+
 # AWS Amplify設定
 NEXT_PUBLIC_AWS_REGION=ap-northeast-1
 NEXT_PUBLIC_COGNITO_USER_POOL_ID=your-pool-id
 NEXT_PUBLIC_COGNITO_APP_CLIENT_ID=your-client-id
 
-# E2Eテスト用の認証情報（Playwrightテストで使用）
+# E2Eテスト用（オプション）
 E2E_TEST_EMAIL=test@example.com
 E2E_TEST_PASSWORD=TestPassword123
 ```
 
-**注意**:
+### 3. APIコードの生成
 
-- `.env.local` はGitにコミットされません（`.gitignore`に含まれています）
-- E2Eテストを実行する場合は、`E2E_TEST_EMAIL`と`E2E_TEST_PASSWORD`を設定してください
-- CI/CD環境では、環境変数をCI/CDプラットフォームの設定で指定してください（Vercelの環境変数とは別です）
-
-### 3. APIコードの生成（初回のみ、またはAPI仕様変更時）
-
-バックエンドのOpenAPI仕様からフロントエンド用のAPIクライアントコードを生成します。
+バックエンドのOpenAPI仕様からAPIクライアントを自動生成します。
 
 ```bash
 npm run orval
@@ -83,89 +186,31 @@ npm run dev
 
 開発サーバーは `http://localhost:3001` で起動します。
 
-ブラウザで [http://localhost:3001](http://localhost:3001) を開いてアプリケーションを確認できます。
-
 ### 利用可能なスクリプト
 
 ```bash
-# 開発サーバー起動
-npm run dev
-
-# プロダクションビルド
-npm run build
-
-# プロダクションサーバー起動
-npm start
-
-# リント
-npm run lint
-
-# ユニットテスト実行
-npm test
-
-# APIコード生成
-npm run orval
+npm run dev      # 開発サーバー起動
+npm run build    # プロダクションビルド
+npm start        # プロダクションサーバー起動
+npm run lint     # ESLint実行
+npm test         # ユニットテスト実行
+npm run orval    # APIコード生成
 ```
 
 ## 🚢 ビルド・デプロイ
 
-### ビルド
-
-```bash
-npm run build
-```
-
-### デプロイ
+### デプロイ環境
 
 このプロジェクトは [Vercel](https://vercel.com/) にデプロイされています。
 
-#### デプロイ環境
-
-- **本番環境**: `main` ブランチへのマージ時に自動デプロイ
-- **プレビュー環境**: `main` 以外のブランチへのプッシュ時に自動デプロイ
-
-#### デプロイフロー
-
-1. `main` ブランチへのマージ → 本番環境にデプロイ
-2. その他のブランチへのプッシュ → プレビュー環境にデプロイ
-
-Vercelの設定により、GitHubリポジトリと連携して自動的にデプロイが実行されます。
-
-## 📁 プロジェクト構造
-
-```text
-frontend/
-├── src/
-│   ├── app/                    # Next.js App Router (ページルーティング)
-│   │   ├── chat/               # チャットページ
-│   │   ├── documents/          # ドキュメント管理ページ
-│   │   ├── login/              # ログインページ
-│   │   ├── register/           # 登録ページ
-│   │   └── ...
-│   ├── components/
-│   │   └── ui/                 # 汎用UIコンポーネント
-│   ├── features/               # 機能ごとのドメインロジック
-│   │   ├── auth/               # 認証機能
-│   │   ├── chat/               # チャット機能
-│   │   └── documents/          # ドキュメント管理機能
-│   ├── hooks/                  # 汎用カスタムフック
-│   ├── lib/                    # 汎用ユーティリティ・APIクライアント
-│   │   └── api/
-│   │       └── generated/      # Orvalで生成されたAPIコード
-│   ├── providers/              # React Context プロバイダー
-│   └── mocks/                  # MSWモックハンドラー
-├── e2e/                        # E2Eテスト (Playwright)
-├── public/                     # 静的ファイル
-└── ...
-```
-
-詳細なディレクトリ構成とアーキテクチャの指針については、[CONTRIBUTING.md](./CONTRIBUTING.md) を参照してください。
+| 環境 | ブランチ | 自動デプロイ |
+|------|---------|-------------|
+| **Production** | `main` | ✅ |
+| **Preview** | その他 | ✅ |
 
 ## 🧪 テスト
 
 ### ユニットテスト
-
-[Vitest](https://vitest.dev/) を使用してユニットテストを実行します。
 
 ```bash
 npm test
@@ -173,72 +218,34 @@ npm test
 
 ### E2Eテスト
 
-[Playwright](https://playwright.dev/) を使用してE2Eテストを実行します。
-
 ```bash
 # テスト実行
 npx playwright test
 
-# UIモードでテスト実行
+# UIモードで実行
 npx playwright test --ui
-
-# 特定のテストファイルを実行
-npx playwright test e2e/specs/landing.spec.ts
 
 # レポート表示
 npx playwright show-report
 ```
 
-**E2Eテスト用の環境変数**:
-
-- E2Eテストを実行する場合は、`.env.local`に以下の環境変数を設定してください：
-  - `E2E_TEST_EMAIL`: テストで使用する既存ユーザーのメールアドレス
-  - `E2E_TEST_PASSWORD`: テストで使用する既存ユーザーのパスワード
-- これらの環境変数が設定されていない場合、デフォルト値（`test@example.com` / `TestPassword123`）が使用されます
-- **重要**: Vercelの環境変数は、Vercelにデプロイされたアプリケーションでのみ使用可能です。Playwrightテストは別の環境で実行されるため、ローカルでは`.env.local`、CI/CDではCI/CDプラットフォームの環境変数設定を使用してください
-
-E2Eテストの詳細は `e2e/` ディレクトリを参照してください。
-
 ## 🔧 APIコード生成
 
-バックエンドのOpenAPI仕様 (`../myelinbase-backend/doc/openapi.yaml`) から、以下のコードを自動生成します：
+バックエンドのOpenAPI仕様から以下を自動生成します：
 
-- **React Query フック**: API呼び出し用のカスタムフック
-- **Zodスキーマ**: フロントエンドでのバリデーション用
-
-### 生成コマンド
+- **React Query フック**: API呼び出し用カスタムフック
+- **Zodスキーマ**: バリデーション用スキーマ
 
 ```bash
 npm run orval
 ```
 
-生成されたコードは `src/lib/api/generated/` に配置されます。
-
-### 設定
-
-生成設定は `orval.config.ts` で管理されています。
+生成コードは `src/lib/api/generated/` に配置されます。
 
 ## 🤝 コントリビューション
 
-コントリビューションを歓迎します！詳細な開発ガイドラインについては、[CONTRIBUTING.md](./CONTRIBUTING.md) を参照してください。
-
-主なガイドライン：
-
-- Feature-based ディレクトリ構成を採用
-- Server Components を優先的に使用
-- ESLint と Prettier による自動フォーマット
-- 命名規則の遵守
-
-## 📚 参考資料
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [React Documentation](https://react.dev/)
-- [TanStack Query Documentation](https://tanstack.com/query/latest)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [AWS Amplify Documentation](https://docs.amplify.aws/)
-- [Orval Documentation](https://orval.dev/)
-- [Playwright Documentation](https://playwright.dev/)
+詳細は [CONTRIBUTING.md](./CONTRIBUTING.md) を参照してください。
 
 ## 📄 ライセンス
 
-このプロジェクトはプライベートプロジェクトです。
+MIT License - 詳細は [LICENSE](./LICENSE) を参照してください。
