@@ -185,6 +185,20 @@ test.describe("Register Page", () => {
     );
   });
 
+  test("記号を含まないパスワードでバリデーションエラーが表示されること", async () => {
+    await registerPage.verifyRegisterFormLoaded();
+
+    // 記号を含まないパスワードを入力
+    await registerPage.passwordInput.fill("Password123");
+    await registerPage.passwordInput.blur();
+
+    // registerSchema で定義されているメッセージに基づいて検証
+    await registerPage.expectValidationError(
+      "password",
+      "パスワードには記号(! @ # など)を含める必要があります"
+    );
+  });
+
   test("空のユーザー名でバリデーションエラーが表示されること", async () => {
     await registerPage.verifyRegisterFormLoaded();
 

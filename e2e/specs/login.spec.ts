@@ -74,6 +74,20 @@ test.describe("Login Page", () => {
     );
   });
 
+  test("記号を含まないパスワードでバリデーションエラーが表示されること", async () => {
+    await loginPage.verifyPageLoaded();
+
+    // 記号を含まないパスワードを入力
+    await loginPage.passwordInput.fill("Password123");
+    await loginPage.passwordInput.blur();
+
+    // registerSchema で定義されているメッセージに基づいて検証
+    await loginPage.expectValidationError(
+      "password",
+      "パスワードには記号(! @ # など)を含める必要があります"
+    );
+  });
+
   test("パスワード忘れリンクをクリックするとパスワード忘れページへ遷移すること", async ({
     page,
   }) => {
