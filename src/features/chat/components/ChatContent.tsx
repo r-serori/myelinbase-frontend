@@ -19,6 +19,7 @@ import {
 } from "@/features/chat/lib/utils";
 import { useGetDocumentDownloadUrl } from "@/features/documents/hooks/useDocuments";
 import { useQueryErrorToast } from "@/hooks/useQueryErrorToast";
+import { getGetChatSessionsQueryKey } from "@/lib/api/generated/default/default";
 import {
   ErrorResponse,
   FeedbackType,
@@ -166,7 +167,7 @@ export default function ChatContent({
         );
       }
       void queryClient.invalidateQueries({
-        queryKey: queryKeys.sessions,
+        queryKey: getGetChatSessionsQueryKey(),
       });
     },
     onError: (error) => {
