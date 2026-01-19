@@ -176,11 +176,11 @@ test.describe("Forgot Password Page", () => {
 
     // パスワードが一致しない状態で入力（数字と大文字を含む適切なパスワードを使用）
     await forgotPasswordPage.codeInput.fill("123456");
-    await forgotPasswordPage.newPasswordInput.fill("NewPassword123");
+    await forgotPasswordPage.newPasswordInput.fill("NewPassword_123");
     await forgotPasswordPage.newPasswordInput.blur();
     // 新しいパスワードのバリデーションが完了するまで少し待機
     await forgotPasswordPage.page.waitForTimeout(100);
-    await forgotPasswordPage.confirmPasswordInput.fill("DifferentPassword123");
+    await forgotPasswordPage.confirmPasswordInput.fill("DifferentPassword_123");
     await forgotPasswordPage.confirmPasswordInput.blur();
 
     await forgotPasswordPage.submitReset();
