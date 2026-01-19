@@ -115,7 +115,7 @@ test.describe("Chat Page", () => {
 
       // URLにセッションIDが含まれていないことを確認
       const baseUrl = process.env.BASE_URL;
-      await expect(page).toHaveURL(new RegExp(`${baseUrl}chat/`));
+      await expect(page).toHaveURL(`${baseUrl}/chat/`);
     });
   });
 

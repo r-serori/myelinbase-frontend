@@ -111,7 +111,7 @@ test.describe("Login Page", () => {
   test("存在しないユーザーでログインしようとするとエラーメッセージが表示されること", async () => {
     await loginPage.verifyPageLoaded();
 
-    await loginPage.login("nonexistent@example.com", "TestPassword123");
+    await loginPage.login("nonexistent@example.com", "TestPassword_123");
 
     // エラーメッセージが表示されることを確認
     // 実際のエラーメッセージに合わせて調整してください
@@ -125,7 +125,7 @@ test.describe("Login Page", () => {
 
     // 既存ユーザーで間違ったパスワードを入力
     const testEmail = process.env.E2E_TEST_EMAIL || "test@example.com";
-    await loginPage.login(testEmail, "WrongPassword123");
+    await loginPage.login(testEmail, "WrongPassword_123");
 
     // エラーメッセージが表示されることを確認
     await loginPage.expectErrorToast(
@@ -140,7 +140,7 @@ test.describe("Login Page", () => {
 
     // 既存ユーザーで正しい認証情報を入力
     const testEmail = process.env.E2E_TEST_EMAIL || "test@example.com";
-    const testPassword = process.env.E2E_TEST_PASSWORD || "TestPassword123";
+    const testPassword = process.env.E2E_TEST_PASSWORD || "TestPassword_123";
     await loginPage.login(testEmail, testPassword);
 
     // ログイン成功後、ドキュメントページまたはチャットページにリダイレクトされることを確認

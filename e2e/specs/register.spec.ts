@@ -72,7 +72,7 @@ test.describe("Register Page", () => {
     await registerPage.fillRegisterForm(
       "Test User",
       `test${timestamp}@example.com`,
-      "TestPassword123"
+      "TestPassword_123"
     );
     await registerPage.submitRegister();
 
@@ -88,7 +88,7 @@ test.describe("Register Page", () => {
     await registerPage.fillRegisterForm(
       "Test User",
       `test${timestamp}@example.com`,
-      "TestPassword123"
+      "TestPassword_123"
     );
     await registerPage.submitRegister();
     await registerPage.verifyConfirmFormLoaded({ timeout: 10000 });
@@ -118,7 +118,7 @@ test.describe("Register Page", () => {
     await registerPage.fillRegisterForm(
       "Test User",
       `test${timestamp}@example.com`,
-      "TestPassword123"
+      "TestPassword_123"
     );
     await registerPage.submitRegister();
     await registerPage.verifyConfirmFormLoaded({ timeout: 10000 });

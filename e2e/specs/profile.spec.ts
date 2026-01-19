@@ -275,9 +275,9 @@ test.describe("Profile Page", () => {
 
     await profilePage.openChangePasswordForm();
 
-    await profilePage.oldPasswordInput.fill("OldPassword123");
-    await profilePage.newPasswordInput.fill("NewPassword123");
-    await profilePage.confirmNewPasswordInput.fill("Different123");
+    await profilePage.oldPasswordInput.fill("OldPassword_123");
+    await profilePage.newPasswordInput.fill("NewPassword_123");
+    await profilePage.confirmNewPasswordInput.fill("Different_123");
     await profilePage.confirmNewPasswordInput.blur();
     await profilePage.changePasswordSubmitButton.click();
 
